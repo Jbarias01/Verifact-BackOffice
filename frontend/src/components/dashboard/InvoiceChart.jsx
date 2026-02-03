@@ -99,9 +99,6 @@ export const InvoiceChart = () => {
                             <Tooltip content={<CustomTooltip />} />
                             <Legend 
                                 wrapperStyle={{ paddingTop: '20px' }}
-                                formatter={(value) => (
-                                    <span className="text-sm text-muted-foreground capitalize">{value}</span>
-                                )}
                             />
                             <Bar 
                                 dataKey="emitidas" 

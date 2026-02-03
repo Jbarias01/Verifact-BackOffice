@@ -52,55 +52,55 @@ const menuItems = [
     }
 ];
 
+const NavItem = ({ item, isCollapsed, pathname }) => {
+    const isActive = pathname === item.path;
+    const Icon = item.icon;
+
+    const linkContent = (
+        <NavLink
+            to={item.path}
+            className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                "hover:bg-sidebar-hover group",
+                isActive && "bg-sidebar-active text-primary-foreground",
+                !isActive && "text-sidebar-foreground"
+            )}
+        >
+            <Icon className={cn(
+                "h-5 w-5 flex-shrink-0 transition-colors",
+                isActive ? "text-primary-foreground" : "text-sidebar-muted group-hover:text-sidebar-foreground"
+            )} />
+            {!isCollapsed && (
+                <span className={cn(
+                    "text-sm font-medium transition-opacity duration-200",
+                    isCollapsed && "opacity-0"
+                )}>
+                    {item.name}
+                </span>
+            )}
+        </NavLink>
+    );
+
+    if (isCollapsed) {
+        return (
+            <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                    {linkContent}
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                    {item.name}
+                </TooltipContent>
+            </Tooltip>
+        );
+    }
+
+    return linkContent;
+};
+
 export const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { logout, company } = useAuth();
     const location = useLocation();
-
-    const NavItem = ({ item }) => {
-        const isActive = location.pathname === item.path;
-        const Icon = item.icon;
-
-        const linkContent = (
-            <NavLink
-                to={item.path}
-                className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                    "hover:bg-sidebar-hover group",
-                    isActive && "bg-sidebar-active text-primary-foreground",
-                    !isActive && "text-sidebar-foreground"
-                )}
-            >
-                <Icon className={cn(
-                    "h-5 w-5 flex-shrink-0 transition-colors",
-                    isActive ? "text-primary-foreground" : "text-sidebar-muted group-hover:text-sidebar-foreground"
-                )} />
-                {!isCollapsed && (
-                    <span className={cn(
-                        "text-sm font-medium transition-opacity duration-200",
-                        isCollapsed && "opacity-0"
-                    )}>
-                        {item.name}
-                    </span>
-                )}
-            </NavLink>
-        );
-
-        if (isCollapsed) {
-            return (
-                <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                        {linkContent}
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="font-medium">
-                        {item.name}
-                    </TooltipContent>
-                </Tooltip>
-            );
-        }
-
-        return linkContent;
-    };
 
     return (
         <TooltipProvider>
@@ -143,7 +143,7 @@ export const Sidebar = () => {
                             )}
                             <div className="space-y-1">
                                 {section.items.map((item) => (
-                                    <NavItem key={item.path} item={item} />
+                                    <NavItem key={item.path} item={item} isCollapsed={isCollapsed} pathname={location.pathname} />
                                 ))}
                             </div>
                         </div>
