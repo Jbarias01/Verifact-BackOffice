@@ -101,3 +101,86 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Test the Verifact BackOffice application for electronic billing. Test Login Page, Register Page (3-step wizard), and Dashboard functionality including stats cards, navigation, theme toggle, and logout."
+
+frontend:
+  - task: "Login Page Functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Login.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Initial testing required - need to verify login form rendering, validation, successful login with demo credentials, and redirect to dashboard"
+
+  - task: "Register Page 3-Step Wizard"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Register.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Initial testing required - need to verify 3-step registration wizard, form validation, RNC format validation, navigation between steps"
+
+  - task: "Dashboard Main Page"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Dashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Initial testing required - need to verify stats cards, quick actions, sidebar navigation, invoices chart, recent invoices table"
+
+  - task: "Theme Toggle Functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/layout/Header.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Initial testing required - need to verify dark/light mode toggle works correctly"
+
+  - task: "Logout Functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/context/AuthContext.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Initial testing required - need to verify logout functionality works and redirects to login page"
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+
+test_plan:
+  current_focus:
+    - "Login Page Functionality"
+    - "Register Page 3-Step Wizard"
+    - "Dashboard Main Page"
+    - "Theme Toggle Functionality"
+    - "Logout Functionality"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+    - message: "Starting comprehensive testing of Verifact BackOffice application. Will test login, registration wizard, dashboard functionality, theme toggle, and logout. Using playwright automation to verify UI rendering and user interactions."
