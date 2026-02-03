@@ -1,54 +1,64 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { Toaster } from '@/components/ui/sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Pages
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import Dashboard from '@/pages/Dashboard';
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
+// Layout
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+// Placeholder pages for routes
+const PlaceholderPage = ({ title }) => (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
+        <p className="text-muted-foreground max-w-md">
+            Esta sección estará disponible próximamente. Estamos trabajando para traerte la mejor experiencia.
+        </p>
     </div>
-  );
-};
+);
 
 function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
-  );
+    return (
+        <ThemeProvider>
+            <AuthProvider>
+                <BrowserRouter>
+                    <Routes>
+                        {/* Public Routes */}
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        
+                        {/* Protected Dashboard Routes */}
+                        <Route path="/dashboard" element={<DashboardLayout />}>
+                            <Route index element={<Dashboard />} />
+                            <Route path="facturas" element={<PlaceholderPage title="Gestión de Facturas" />} />
+                            <Route path="clientes" element={<PlaceholderPage title="Gestión de Clientes" />} />
+                            <Route path="emitidas" element={<PlaceholderPage title="Facturas Emitidas" />} />
+                            <Route path="pendientes" element={<PlaceholderPage title="Facturas Pendientes" />} />
+                            <Route path="comprobantes" element={<PlaceholderPage title="Comprobantes Fiscales" />} />
+                            <Route path="reportes" element={<PlaceholderPage title="Reportes y Análisis" />} />
+                            <Route path="empresa" element={<PlaceholderPage title="Datos de la Empresa" />} />
+                            <Route path="configuracion" element={<PlaceholderPage title="Configuración" />} />
+                        </Route>
+                        
+                        {/* Default redirect */}
+                        <Route path="/" element={<Navigate to="/login" replace />} />
+                        <Route path="*" element={<Navigate to="/login" replace />} />
+                    </Routes>
+                </BrowserRouter>
+                <Toaster position="top-right" />
+            </AuthProvider>
+        </ThemeProvider>
+    );
 }
 
 export default App;
