@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
     FileText, 
     Search,
-    Calendar,
+    Calendar as CalendarIcon,
     RefreshCw,
     Loader2,
     AlertTriangle,
@@ -16,11 +16,19 @@ import {
     Hash,
     DollarSign
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Card,
     CardContent,
@@ -59,17 +67,17 @@ const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://e
 const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
 const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
 
-// Helper to format date for display
-const formatDate = (dateString) => {
+// Helper to format date for display (dd-MM-yyyy)
+const formatDateDisplay = (date) => {
+    if (!date) return '';
+    return format(date, 'dd-MM-yyyy');
+};
+
+// Helper to format datetime for table display
+const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-DO', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    return format(date, 'dd-MM-yyyy HH:mm', { locale: es });
 };
 
 // Helper to format currency
@@ -82,22 +90,12 @@ const formatCurrency = (amount) => {
 
 // Helper to format date for API (DD-MM-YYYY)
 const formatDateForApi = (date) => {
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
+    return format(date, 'dd-MM-yyyy');
 };
 
-// Get default date range (last 30 days)
-const getDefaultDateRange = () => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 30);
-    return {
-        start: start.toISOString().split('T')[0],
-        end: end.toISOString().split('T')[0]
-    };
+// Get today's date
+const getToday = () => {
+    return new Date();
 };
 
 const statusConfig = {
@@ -123,6 +121,43 @@ const statusConfig = {
     },
 };
 
+// DatePicker Component
+const DatePicker = ({ date, onSelect, label }) => {
+    const [open, setOpen] = useState(false);
+    
+    return (
+        <div className="space-y-2">
+            <Label>{label}</Label>
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? formatDateDisplay(date) : "Seleccionar fecha"}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(newDate) => {
+                            onSelect(newDate);
+                            setOpen(false);
+                        }}
+                        initialFocus
+                        locale={es}
+                    />
+                </PopoverContent>
+            </Popover>
+        </div>
+    );
+};
+
 const Facturas = () => {
     const { token } = useAuth();
     const [facturas, setFacturas] = useState([]);
@@ -130,10 +165,9 @@ const Facturas = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // Filters
-    const defaultDates = getDefaultDateRange();
-    const [fechaInicio, setFechaInicio] = useState(defaultDates.start);
-    const [fechaFin, setFechaFin] = useState(defaultDates.end);
+    // Filters - Default to today's date
+    const [fechaInicio, setFechaInicio] = useState(getToday());
+    const [fechaFin, setFechaFin] = useState(getToday());
     const [statusFilter, setStatusFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     
@@ -178,6 +212,7 @@ const Facturas = () => {
         }
     }, [token, fechaInicio, fechaFin]);
 
+    // Fetch facturas on mount and when dates change
     useEffect(() => {
         fetchFacturas();
     }, [fetchFacturas]);
@@ -307,24 +342,16 @@ const Facturas = () => {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="fechaInicio">Fecha Inicio</Label>
-                            <Input
-                                id="fechaInicio"
-                                type="date"
-                                value={fechaInicio}
-                                onChange={(e) => setFechaInicio(e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="fechaFin">Fecha Fin</Label>
-                            <Input
-                                id="fechaFin"
-                                type="date"
-                                value={fechaFin}
-                                onChange={(e) => setFechaFin(e.target.value)}
-                            />
-                        </div>
+                        <DatePicker
+                            date={fechaInicio}
+                            onSelect={setFechaInicio}
+                            label="Fecha Desde"
+                        />
+                        <DatePicker
+                            date={fechaFin}
+                            onSelect={setFechaFin}
+                            label="Fecha Hasta"
+                        />
                         <div className="space-y-2">
                             <Label htmlFor="status">Estado</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -368,7 +395,7 @@ const Facturas = () => {
                 <CardHeader>
                     <CardTitle>Facturas Electrónicas</CardTitle>
                     <CardDescription>
-                        {filteredFacturas.length} factura(s) encontrada(s) en el período seleccionado
+                        {filteredFacturas.length} factura(s) encontrada(s) del {formatDateDisplay(fechaInicio)} al {formatDateDisplay(fechaFin)}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -396,7 +423,7 @@ const Facturas = () => {
                                 No se encontraron facturas
                             </h3>
                             <p className="text-muted-foreground mb-4 max-w-md">
-                                No hay facturas electrónicas en el período seleccionado. Intenta cambiar los filtros.
+                                No hay facturas electrónicas para el día {formatDateDisplay(fechaInicio)}. Intenta cambiar el rango de fechas.
                             </p>
                         </div>
                     ) : (
@@ -437,7 +464,7 @@ const Facturas = () => {
                                                 {formatCurrency(factura.monto)}
                                             </TableCell>
                                             <TableCell className="text-muted-foreground text-sm">
-                                                {formatDate(factura.createdAt)}
+                                                {formatDateTime(factura.createdAt)}
                                             </TableCell>
                                             <TableCell>
                                                 {getStatusBadge(factura.estado)}
@@ -503,11 +530,11 @@ const Facturas = () => {
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-muted-foreground">Fecha Creación</p>
-                                    <p className="text-sm">{formatDate(selectedFactura.createdAt)}</p>
+                                    <p className="text-sm">{formatDateTime(selectedFactura.createdAt)}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-muted-foreground">Fecha Recepción</p>
-                                    <p className="text-sm">{formatDate(selectedFactura.fechaRecepcion)}</p>
+                                    <p className="text-sm">{formatDateTime(selectedFactura.fechaRecepcion)}</p>
                                 </div>
                             </div>
                             
