@@ -195,6 +195,12 @@ const Facturas = () => {
     // Detail modal
     const [selectedFactura, setSelectedFactura] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    
+    // Upload modal
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [uploadFile, setUploadFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     const fetchFacturas = useCallback(async () => {
         if (!token) return;
