@@ -9,6 +9,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Certificados from '@/pages/Certificados';
+import Facturas from '@/pages/Facturas';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
