@@ -235,7 +235,17 @@ const Facturas = () => {
 
     // Filter facturas based on status and search term
     const filteredFacturas = facturas.filter(factura => {
-        const matchesStatus = statusFilter === 'all' || factura.estado === statusFilter;
+        let matchesStatus = statusFilter === 'all';
+        if (!matchesStatus) {
+            // Handle variations in status names
+            if (statusFilter === 'AceptadoCondicional') {
+                matchesStatus = factura.estado === 'AceptadoCondicional' || factura.estado === 'Aceptado Condicional';
+            } else if (statusFilter === 'EnProceso') {
+                matchesStatus = factura.estado === 'EnProceso' || factura.estado === 'En Proceso';
+            } else {
+                matchesStatus = factura.estado === statusFilter;
+            }
+        }
         const matchesSearch = searchTerm === '' || 
             factura.e_NCF?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             factura.razonSocialComprador?.toLowerCase().includes(searchTerm.toLowerCase()) ||
