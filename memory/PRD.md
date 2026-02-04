@@ -47,20 +47,49 @@
 - **Fuentes**: Inter, Plus Jakarta Sans
 
 ## Estado Actual
-✅ Prototipo funcional con datos MOCK  
-✅ Login y registro funcionales (con localStorage)  
-✅ Dashboard completo con gráficos y tablas  
+✅ Login conectado al Backend REAL de Verifact  
+✅ Registro de empresa (MOCK - pendiente endpoint)  
+✅ Dashboard completo con gráficos y tablas (datos MOCK)  
 ✅ Modo oscuro/claro  
 ✅ Navegación completa
+✅ JWT Token guardado en localStorage
+✅ Datos de usuario y empresa del backend real
+
+## API Backend Integrado
+**URL Base**: `https://ecf-test.api.verifact.com.do`
+
+### Endpoints Implementados:
+- ✅ `POST /api/auth/login` - Autenticación de usuarios
+
+### Respuesta del Login:
+```json
+{
+  "success": true,
+  "token": "JWT_TOKEN",
+  "refreshToken": "REFRESH_TOKEN",
+  "expira": "2026-02-04T01:33:26Z",
+  "usuario": {
+    "id": "user-uuid",
+    "clienteId": "cliente-uuid",
+    "nombre": "Nombre Usuario",
+    "email": "email@empresa.com",
+    "rol": "Admin",
+    "clienteNombre": "EMPRESA SRL",
+    "clienteRNC": "123456789"
+  }
+}
+```
 
 ## Próximos Pasos
-- Integrar con endpoints del Backend real
+- Implementar endpoint de registro de empresa
 - Implementar CRUD de facturas
 - Implementar gestión de clientes
 - Añadir reportes y exportación
-- Integración con DGII
+- Integrar más endpoints del backend
+- Implementar refresh token
 
 ## Notas
-- La autenticación actual usa localStorage (MOCK)
-- Los datos del dashboard son simulados
+- Login usa backend REAL de Verifact
+- Los datos del dashboard aún son MOCK (pendiente endpoints)
+- Token JWT se guarda en localStorage con expiración
 - Diseñado para República Dominicana (RNC, pesos dominicanos)
