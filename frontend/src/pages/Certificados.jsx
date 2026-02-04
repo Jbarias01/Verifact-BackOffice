@@ -175,7 +175,11 @@ const Certificados = () => {
             formData.append('certificado', selectedFile);
             formData.append('password', password);
             
-            const response = await axios.post(`${VERIFACT_API_URL}/api/certificado/subir`, formData, {
+            const url = USE_PROXY 
+                ? `${API_BASE_URL}/certificado/subir`
+                : `${API_BASE_URL}/api/certificado/subir`;
+            
+            const response = await axios.post(url, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
