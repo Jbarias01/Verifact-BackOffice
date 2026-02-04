@@ -254,12 +254,16 @@ const Facturas = () => {
     };
 
     const getStatusBadge = (estado) => {
-        const config = statusConfig[estado] || statusConfig['Pendiente'];
+        const config = statusConfig[estado] || { 
+            label: estado || 'Desconocido', 
+            icon: Clock,
+            className: 'bg-muted text-muted-foreground border-muted' 
+        };
         const Icon = config.icon;
         
         return (
             <Badge variant="outline" className={cn("font-medium", config.className)}>
-                <Icon className="h-3 w-3 mr-1" />
+                <Icon className={cn("h-3 w-3 mr-1", estado === 'EnProceso' || estado === 'En Proceso' ? 'animate-spin' : '')} />
                 {config.label}
             </Badge>
         );
