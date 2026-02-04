@@ -46,9 +46,10 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
+import { useAuth } from '@/context/AuthContext';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API_URL = `${BACKEND_URL}/api`;
+// Get API URL from auth context or environment
+const VERIFACT_API_URL = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf-test.api.verifact.com.do';
 
 // Helper to parse certificate subject
 const parseSubject = (subject) => {
