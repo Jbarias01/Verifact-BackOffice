@@ -224,7 +224,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         refreshAuthToken,
-        apiUrl: VERIFACT_API_URL
+        apiUrl: API_URL
     };
 
     return (
