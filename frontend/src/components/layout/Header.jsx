@@ -129,7 +129,7 @@ export const Header = ({ sidebarCollapsed = false }) => {
                                 </Avatar>
                                 <div className="hidden md:block text-left">
                                     <p className="text-sm font-medium">{user?.name || 'Usuario'}</p>
-                                    <p className="text-xs text-muted-foreground">{user?.role === 'admin' ? 'Administrador' : 'Usuario'}</p>
+                                    <p className="text-xs text-muted-foreground">{user?.role || 'Usuario'}</p>
                                 </div>
                             </Button>
                         </DropdownMenuTrigger>
