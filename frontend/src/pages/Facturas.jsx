@@ -88,9 +88,9 @@ const formatCurrency = (amount) => {
     }).format(amount);
 };
 
-// Helper to format date for API (DD-MM-YYYY)
+// Helper to format date for API (MM-DD-YYYY - el API espera este formato)
 const formatDateForApi = (date) => {
-    return format(date, 'dd-MM-yyyy');
+    return format(date, 'MM-dd-yyyy');
 };
 
 // Get today's date
