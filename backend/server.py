@@ -38,6 +38,31 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+# Verifact API Models
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class UsuarioResponse(BaseModel):
+    id: str
+    clienteId: str
+    nombre: str
+    email: str
+    rol: str
+    clienteNombre: str
+    clienteRNC: str
+
+class LoginResponse(BaseModel):
+    success: bool
+    token: Optional[str] = None
+    refreshToken: Optional[str] = None
+    expira: Optional[str] = None
+    usuario: Optional[UsuarioResponse] = None
+    message: Optional[str] = None
+
+# Verifact API Base URL
+VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf-test.api.verifact.com.do')
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
