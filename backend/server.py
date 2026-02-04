@@ -303,6 +303,90 @@ async def proxy_upload_certificado(
 # FACTURAS API PROXY ENDPOINTS
 # =============================================
 
+@api_router.post("/facturas/facturaselectronicas")
+async def proxy_upload_factura(
+    XmlFile: UploadFile = File(...),
+    authorization: str = Header(...)
+):
+    """
+    Proxy endpoint to upload an electronic invoice (XML) to Verifact API.
+    """
+    try:
+        # Read file content
+        file_content = await XmlFile.read()
+        
+        async with httpx.AsyncClient(verify=False, timeout=60.0) as http_client:
+            # Prepare multipart form data
+            files = {
+                'XmlFile': (XmlFile.filename, file_content, 'text/xml')
+            }
+            data = {
+                'Xml': ''
+            }
+            
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/facturas/facturaselectronicas",
+                files=files,
+                data=data,
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                # Check if there's an error in the response
+                if result.get('error') and result['error'] != '':
+                    return {
+                        "success": False,
+                        "message": result['error'],
+                        "trackId": result.get('trackId')
+                    }
+                return {
+                    "success": True,
+                    "trackId": result.get('trackId'),
+                    "mensaje": result.get('mensaje', 'Factura enviada exitosamente')
+                }
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message") or error_data.get("error") or "Error al procesar la factura"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": "Error al procesar la factura"
+                    }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message") or error_data.get("error") or f"Error: {response.status_code}"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading invoice: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 @api_router.get("/facturas/getfacturaselectronicas")
 async def proxy_get_facturas(
     fechaInicio: str,
