@@ -272,6 +272,65 @@ async def proxy_upload_certificado(
         logger.error(f"Error uploading certificate: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+# =============================================
+# FACTURAS API PROXY ENDPOINTS
+# =============================================
+
+@api_router.get("/facturas/getfacturaselectronicas")
+async def proxy_get_facturas(
+    fechaInicio: str,
+    fechaFin: str,
+    authorization: str = Header(...)
+):
+    """
+    Proxy endpoint to get electronic invoices from Verifact API.
+    Date format: DD-MM-YYYY
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/facturas/getfacturaselectronicas",
+                params={
+                    "fechaInicio": fechaInicio,
+                    "fechaFin": fechaFin
+                },
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "total": 0,
+                        "facturas": [],
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "total": 0,
+                        "facturas": [],
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting invoices: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
