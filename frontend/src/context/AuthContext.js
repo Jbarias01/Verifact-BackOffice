@@ -63,8 +63,8 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         
         try {
-            // Use our backend proxy to avoid CORS issues
-            const response = await axios.post(`${API_URL}/auth/login`, {
+            // Direct call to Verifact API
+            const response = await axios.post(`${VERIFACT_API_URL}/api/auth/login`, {
                 email,
                 password
             }, {
