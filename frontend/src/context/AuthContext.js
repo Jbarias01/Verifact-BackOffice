@@ -63,7 +63,8 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         
         try {
-            const response = await axios.post(`${VERIFACT_API_URL}/api/auth/login`, {
+            // Use our backend proxy to avoid CORS issues
+            const response = await axios.post(`${API_URL}/auth/login`, {
                 email,
                 password
             }, {
