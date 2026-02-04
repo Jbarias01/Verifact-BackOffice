@@ -1,53 +1,63 @@
 # Verifact - Guía de Despliegue en IIS
 
+## Resumen del Proyecto
+
+**Verifact** es un BackOffice para facturación electrónica para República Dominicana.
+
+### Funcionalidades Implementadas:
+- ✅ Login con autenticación JWT
+- ✅ Registro de empresa (3 pasos)
+- ✅ Dashboard con estadísticas
+- ✅ Módulo de Certificados Digitales (.p12)
+- ✅ Modo oscuro/claro
+- ✅ Diseño responsive
+
+---
+
 ## Requisitos Previos
 
 1. **Windows Server** con IIS instalado
-2. **URL Rewrite Module** para IIS (descargar de: https://www.iis.net/downloads/microsoft/url-rewrite)
-3. **Node.js** (solo para generar el build, no es necesario en el servidor)
+2. **URL Rewrite Module** para IIS 
+   - Descargar: https://www.iis.net/downloads/microsoft/url-rewrite
+3. **Node.js 18+** (solo para generar el build)
 
-## Paso 1: Configurar Variables de Entorno
+---
 
-Antes de hacer el build, configura la URL de tu API de Verifact.
+## Opción 1: Despliegue con Proxy (Recomendado si no controlas CORS)
 
-### Opción A: Archivo .env.production
-Crea o edita el archivo `.env.production` en la carpeta `frontend`:
+Si no puedes modificar el backend .NET para habilitar CORS, puedes usar IIS como reverse proxy.
 
-```env
-REACT_APP_VERIFACT_API_URL=https://ecf-test.api.verifact.com.do
+### Configuración del Reverse Proxy en IIS:
+
+1. Instalar **Application Request Routing (ARR)** en IIS
+2. Habilitar proxy en ARR
+3. Agregar regla de rewrite para `/api/*`:
+
+```xml
+<rule name="API Proxy" stopProcessing="true">
+    <match url="^api/(.*)" />
+    <action type="Rewrite" url="https://ecf-test.api.verifact.com.do/api/{R:1}" />
+</rule>
 ```
 
-### Opción B: Variables del sistema
-```cmd
-set REACT_APP_VERIFACT_API_URL=https://ecf-test.api.verifact.com.do
-```
+---
 
-## Paso 2: Generar el Build
+## Opción 2: Despliegue Directo (Requiere CORS en Backend)
 
-```bash
-cd frontend
-npm install
-npm run build
-```
+### Paso 1: Habilitar CORS en tu Backend .NET
 
-Esto generará una carpeta `build` con todos los archivos estáticos.
-
-## Paso 3: Configurar CORS en tu Backend .NET
-
-En tu API de Verifact (backend .NET), asegúrate de tener CORS habilitado.
-
-### En Program.cs o Startup.cs:
+Agrega en tu `Program.cs` o `Startup.cs`:
 
 ```csharp
-// Agregar en ConfigureServices
-services.AddCors(options =>
+// En ConfigureServices o builder.Services
+builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVerifactUI", builder =>
+    options.AddPolicy("AllowVerifactUI", policy =>
     {
-        builder
+        policy
             .WithOrigins(
-                "https://tu-dominio-iis.com",      // Producción
-                "http://localhost:3000"            // Desarrollo
+                "https://tu-dominio.com",        // Producción
+                "http://localhost:3000"          // Desarrollo
             )
             .AllowAnyMethod()
             .AllowAnyHeader()
@@ -55,100 +65,138 @@ services.AddCors(options =>
     });
 });
 
-// Agregar en Configure (antes de UseRouting)
+// En Configure o app (antes de UseRouting)
 app.UseCors("AllowVerifactUI");
 ```
 
-## Paso 4: Desplegar en IIS
+### Paso 2: Configurar Variables de Entorno
 
-1. **Crear un nuevo sitio** en IIS Manager
-2. **Copiar contenido** de la carpeta `build` al directorio del sitio
-3. **Verificar web.config** - Ya está incluido en el build con las reglas de rewrite
+Editar `.env.production` antes del build:
 
-### Estructura de archivos en IIS:
-```
-C:\inetpub\wwwroot\verifact\
-├── index.html
-├── web.config          (configuración de IIS incluida)
-├── static/
-│   ├── css/
-│   ├── js/
-│   └── media/
-├── favicon.ico
-└── manifest.json
+```env
+REACT_APP_VERIFACT_API_URL=https://ecf-test.api.verifact.com.do
 ```
 
-## Paso 5: Configurar el Sitio en IIS
+### Paso 3: Generar el Build
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+---
+
+## Desplegar en IIS
+
+### 1. Crear Sitio en IIS
 
 1. Abrir **IIS Manager**
 2. Click derecho en **Sites** → **Add Website**
 3. Configurar:
    - **Site name**: Verifact
    - **Physical path**: `C:\inetpub\wwwroot\verifact`
-   - **Binding**: Configurar HTTP/HTTPS según necesites
-4. Click **OK**
+   - **Binding**: tu dominio/puerto
 
-## Paso 6: Instalar URL Rewrite Module
+### 2. Copiar Archivos
 
-Si no tienes el módulo instalado:
+Copiar el contenido de la carpeta `build/` a `C:\inetpub\wwwroot\verifact\`:
 
-1. Descargar desde: https://www.iis.net/downloads/microsoft/url-rewrite
-2. Ejecutar el instalador
-3. Reiniciar IIS: `iisreset`
+```
+C:\inetpub\wwwroot\verifact\
+├── index.html
+├── web.config          ← Incluido automáticamente
+├── asset-manifest.json
+└── static/
+    ├── css/
+    │   └── main.*.css
+    └── js/
+        └── main.*.js
+```
 
-## Paso 7: Configurar HTTPS (Recomendado)
+### 3. Verificar URL Rewrite
 
-1. Obtener certificado SSL (Let's Encrypt, DigiCert, etc.)
+El archivo `web.config` ya incluye las reglas necesarias para React Router.
+
+Si no funciona, verificar que **URL Rewrite Module** esté instalado:
+```cmd
+iisreset
+```
+
+---
+
+## Configurar HTTPS (Recomendado)
+
+1. Obtener certificado SSL
 2. En IIS Manager → Sitio → Bindings → Add
-3. Tipo: https, Puerto: 443, Certificado SSL: seleccionar tu certificado
+3. Tipo: https, Puerto: 443, Seleccionar certificado
+
+---
 
 ## Verificación
 
-1. Navegar a: `https://tu-dominio-iis.com`
-2. Deberías ver la página de login de Verifact
+1. Navegar a `https://tu-dominio.com`
+2. Deberías ver la página de login
 3. Probar login con credenciales reales
-4. Verificar que las llamadas al API funcionen (F12 → Network)
+4. Navegar a **Certificados** desde el sidebar
+
+---
 
 ## Solución de Problemas
 
-### Error 404 en rutas
+### Página en blanco o error 404
+- Verificar que `web.config` esté en la raíz
 - Verificar que URL Rewrite Module esté instalado
-- Verificar que web.config esté en la raíz del sitio
+- Ejecutar `iisreset`
 
 ### Error de CORS
-- Verificar configuración CORS en el backend .NET
-- Verificar que el dominio del frontend esté en la lista de orígenes permitidos
+- Verificar configuración CORS en backend .NET
+- Verificar que el dominio esté en la lista de orígenes permitidos
 
-### API no responde
-- Verificar la variable `REACT_APP_VERIFACT_API_URL` en el build
-- Verificar conectividad entre IIS y el servidor de la API
+### Login no funciona
+- Verificar variable `REACT_APP_VERIFACT_API_URL`
+- Verificar conectividad con el servidor API
+- Revisar consola del navegador (F12)
 
-## Archivos de Configuración
+---
 
-### .env.production
-```env
-REACT_APP_VERIFACT_API_URL=https://ecf-test.api.verifact.com.do
+## Estructura del Proyecto
+
+```
+/frontend
+├── src/
+│   ├── components/         # Componentes reutilizables
+│   │   ├── ui/            # Componentes Shadcn
+│   │   ├── layout/        # Sidebar, Header, Layout
+│   │   └── dashboard/     # Componentes del dashboard
+│   ├── pages/             # Páginas principales
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   ├── Dashboard.jsx
+│   │   └── Certificados.jsx
+│   ├── context/           # Contextos de React
+│   │   ├── AuthContext.js
+│   │   └── ThemeContext.js
+│   └── services/          # Servicios de API
+│       └── api.js
+├── public/
+│   └── web.config         # Configuración IIS
+├── .env.production        # Variables de producción
+└── build/                 # Archivos compilados
 ```
 
-### web.config (ya incluido en public/)
-- Reglas de rewrite para React Router
-- Tipos MIME para archivos estáticos
-- Headers de seguridad
-- Configuración de caché
+---
 
-## Comandos Útiles
+## API Endpoints Utilizados
 
-```bash
-# Generar build de producción
-npm run build
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/auth/login` | POST | Autenticación |
+| `/api/certificado/listado` | GET | Listar certificados |
+| `/api/certificado/subir` | POST | Subir certificado .p12 |
 
-# Verificar build localmente
-npx serve -s build
+---
 
-# Limpiar caché de npm
-npm cache clean --force
-```
-
-## Contacto y Soporte
+## Soporte
 
 Para soporte técnico, contactar al equipo de desarrollo de Verifact.
