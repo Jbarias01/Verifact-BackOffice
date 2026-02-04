@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext(null);
+
+// API Base URL para el backend de Verifact
+const VERIFACT_API_URL = 'https://ecf-test.api.verifact.com.do';
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
@@ -13,57 +17,128 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [company, setCompany] = useState(null);
+    const [token, setToken] = useState(null);
+    const [refreshToken, setRefreshToken] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
         // Check for stored auth data on mount
+        const storedToken = localStorage.getItem('verifact_token');
+        const storedRefreshToken = localStorage.getItem('verifact_refresh_token');
         const storedUser = localStorage.getItem('verifact_user');
         const storedCompany = localStorage.getItem('verifact_company');
+        const tokenExpiry = localStorage.getItem('verifact_token_expiry');
         
-        if (storedUser && storedCompany) {
-            setUser(JSON.parse(storedUser));
-            setCompany(JSON.parse(storedCompany));
-            setIsAuthenticated(true);
+        if (storedToken && storedUser && storedCompany) {
+            // Check if token is still valid
+            if (tokenExpiry && new Date(tokenExpiry) > new Date()) {
+                setToken(storedToken);
+                setRefreshToken(storedRefreshToken);
+                setUser(JSON.parse(storedUser));
+                setCompany(JSON.parse(storedCompany));
+                setIsAuthenticated(true);
+                
+                // Set default axios header
+                axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+            } else {
+                // Token expired, clear storage
+                clearAuthData();
+            }
         }
         setIsLoading(false);
     }, []);
 
+    const clearAuthData = () => {
+        localStorage.removeItem('verifact_token');
+        localStorage.removeItem('verifact_refresh_token');
+        localStorage.removeItem('verifact_user');
+        localStorage.removeItem('verifact_company');
+        localStorage.removeItem('verifact_token_expiry');
+        delete axios.defaults.headers.common['Authorization'];
+    };
+
     const login = async (email, password) => {
-        // Simulated login - will be replaced with actual API call
         setIsLoading(true);
         
         try {
-            // Mock successful login
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const mockUser = {
-                id: '1',
-                email: email,
-                name: 'Usuario Demo',
-                role: 'admin',
-                avatar: null
-            };
-            
-            const mockCompany = {
-                id: '1',
-                name: 'Empresa Demo S.R.L.',
-                rnc: '123456789',
-                address: 'Santo Domingo, República Dominicana',
-                phone: '809-555-1234',
-                email: 'contacto@empresademo.com.do'
-            };
+            const response = await axios.post(`${VERIFACT_API_URL}/api/auth/login`, {
+                email,
+                password
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
 
-            setUser(mockUser);
-            setCompany(mockCompany);
-            setIsAuthenticated(true);
-            
-            localStorage.setItem('verifact_user', JSON.stringify(mockUser));
-            localStorage.setItem('verifact_company', JSON.stringify(mockCompany));
-            
-            return { success: true };
+            const data = response.data;
+
+            if (data.success) {
+                // Extract user data from response
+                const userData = {
+                    id: data.usuario.id,
+                    email: data.usuario.email,
+                    name: data.usuario.nombre,
+                    role: data.usuario.rol,
+                    avatar: null
+                };
+                
+                // Extract company data from response
+                const companyData = {
+                    id: data.usuario.clienteId,
+                    name: data.usuario.clienteNombre,
+                    rnc: data.usuario.clienteRNC,
+                    address: '',
+                    phone: '',
+                    email: data.usuario.email
+                };
+
+                // Save to state
+                setUser(userData);
+                setCompany(companyData);
+                setToken(data.token);
+                setRefreshToken(data.refreshToken);
+                setIsAuthenticated(true);
+                
+                // Save to localStorage
+                localStorage.setItem('verifact_token', data.token);
+                localStorage.setItem('verifact_refresh_token', data.refreshToken);
+                localStorage.setItem('verifact_user', JSON.stringify(userData));
+                localStorage.setItem('verifact_company', JSON.stringify(companyData));
+                localStorage.setItem('verifact_token_expiry', data.expira);
+                
+                // Set default axios header for future requests
+                axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+                
+                return { success: true };
+            } else {
+                return { 
+                    success: false, 
+                    error: data.message || 'Credenciales inválidas' 
+                };
+            }
         } catch (error) {
-            return { success: false, error: 'Credenciales inválidas' };
+            console.error('Login error:', error);
+            
+            let errorMessage = 'Error al iniciar sesión';
+            
+            if (error.response) {
+                // Server responded with error
+                if (error.response.status === 401) {
+                    errorMessage = 'Credenciales inválidas';
+                } else if (error.response.status === 400) {
+                    errorMessage = error.response.data?.message || 'Datos de inicio de sesión incorrectos';
+                } else if (error.response.status === 500) {
+                    errorMessage = 'Error en el servidor. Intente más tarde.';
+                } else {
+                    errorMessage = error.response.data?.message || 'Error al iniciar sesión';
+                }
+            } else if (error.request) {
+                // No response received
+                errorMessage = 'No se pudo conectar con el servidor';
+            }
+            
+            return { success: false, error: errorMessage };
         } finally {
             setIsLoading(false);
         }
@@ -73,7 +148,8 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         
         try {
-            // Mock registration - will be replaced with actual API call
+            // TODO: Implement registration endpoint when available
+            // For now, we'll use mock registration
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             const newUser = {
@@ -102,6 +178,7 @@ export const AuthProvider = ({ children }) => {
             
             return { success: true };
         } catch (error) {
+            console.error('Registration error:', error);
             return { success: false, error: 'Error en el registro' };
         } finally {
             setIsLoading(false);
@@ -111,19 +188,41 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setUser(null);
         setCompany(null);
+        setToken(null);
+        setRefreshToken(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('verifact_user');
-        localStorage.removeItem('verifact_company');
+        clearAuthData();
+    };
+
+    // Function to refresh token (can be used for token renewal)
+    const refreshAuthToken = async () => {
+        if (!refreshToken) return false;
+        
+        try {
+            // TODO: Implement refresh token endpoint when available
+            // const response = await axios.post(`${VERIFACT_API_URL}/api/auth/refresh`, {
+            //     refreshToken
+            // });
+            // Handle response...
+            return true;
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            logout();
+            return false;
+        }
     };
 
     const value = {
         user,
         company,
+        token,
         isLoading,
         isAuthenticated,
         login,
         register,
-        logout
+        logout,
+        refreshAuthToken,
+        apiUrl: VERIFACT_API_URL
     };
 
     return (
