@@ -107,7 +107,7 @@ const Certificados = () => {
         setError(null);
         
         try {
-            const response = await axios.get(`${API_URL}/certificado/listado`, {
+            const response = await axios.get(`${VERIFACT_API_URL}/api/certificado/listado`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
