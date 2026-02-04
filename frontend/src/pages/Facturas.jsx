@@ -679,6 +679,116 @@ const Facturas = () => {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Upload Invoice Modal */}
+            <Dialog open={isUploadOpen} onOpenChange={(open) => {
+                setIsUploadOpen(open);
+                if (!open) resetUploadModal();
+            }}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileUp className="h-5 w-5 text-primary" />
+                            Subir Factura Electrónica
+                        </DialogTitle>
+                        <DialogDescription>
+                            Seleccione un archivo XML de factura electrónica para enviar a la DGII
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4 py-4">
+                        {/* File Drop Zone */}
+                        <div 
+                            className={cn(
+                                "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
+                                uploadFile 
+                                    ? "border-primary bg-primary/5" 
+                                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+                            )}
+                            onClick={() => fileInputRef.current?.click()}
+                            data-testid="file-drop-zone"
+                        >
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xml"
+                                onChange={handleFileSelect}
+                                className="hidden"
+                                data-testid="xml-file-input"
+                            />
+                            
+                            {uploadFile ? (
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <FileText className="h-8 w-8 text-primary" />
+                                        <span className="font-medium text-foreground">{uploadFile.name}</span>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        {(uploadFile.size / 1024).toFixed(2)} KB
+                                    </p>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            resetUploadModal();
+                                        }}
+                                        className="text-destructive hover:text-destructive"
+                                    >
+                                        <X className="h-4 w-4 mr-1" />
+                                        Quitar archivo
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <Upload className="h-12 w-12 text-muted-foreground/50 mx-auto" />
+                                    <p className="text-sm font-medium text-foreground">
+                                        Haz clic para seleccionar un archivo
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Solo archivos XML de factura electrónica
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Info Alert */}
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-info/10 text-info text-sm">
+                            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <p>
+                                El archivo XML debe cumplir con el formato establecido por la DGII para facturas electrónicas.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setIsUploadOpen(false)}
+                            disabled={isUploading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button 
+                            onClick={handleUpload}
+                            disabled={!uploadFile || isUploading}
+                            data-testid="submit-upload-btn"
+                        >
+                            {isUploading ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Enviando...
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Enviar Factura
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
