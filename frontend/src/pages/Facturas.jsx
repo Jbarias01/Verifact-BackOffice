@@ -102,22 +102,38 @@ const statusConfig = {
     'Aceptado': { 
         label: 'Aceptado', 
         icon: CheckCircle2,
-        className: 'bg-success/10 text-success border-success/20' 
+        className: 'bg-success/10 text-success border-success/20',
+        description: 'Factura validada correctamente y totalmente válida'
     },
-    'Rechazado': { 
-        label: 'Rechazado', 
-        icon: XCircle,
-        className: 'bg-destructive/10 text-destructive border-destructive/20' 
+    'AceptadoCondicional': { 
+        label: 'Aceptado Condicional', 
+        icon: AlertTriangle,
+        className: 'bg-warning/10 text-warning border-warning/20',
+        description: 'Válida con requisitos mínimos, corregir errores futuros'
     },
-    'Pendiente': { 
-        label: 'Pendiente', 
-        icon: Clock,
-        className: 'bg-warning/10 text-warning border-warning/20' 
+    'Aceptado Condicional': { 
+        label: 'Aceptado Condicional', 
+        icon: AlertTriangle,
+        className: 'bg-warning/10 text-warning border-warning/20',
+        description: 'Válida con requisitos mínimos, corregir errores futuros'
     },
     'EnProceso': { 
         label: 'En Proceso', 
         icon: Loader2,
-        className: 'bg-info/10 text-info border-info/20' 
+        className: 'bg-info/10 text-info border-info/20',
+        description: 'DGII está validando el documento'
+    },
+    'En Proceso': { 
+        label: 'En Proceso', 
+        icon: Loader2,
+        className: 'bg-info/10 text-info border-info/20',
+        description: 'DGII está validando el documento'
+    },
+    'Rechazado': { 
+        label: 'Rechazado', 
+        icon: XCircle,
+        className: 'bg-destructive/10 text-destructive border-destructive/20',
+        description: 'Documento con errores, debe corregirse'
     },
 };
 
