@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
     FileText, 
     Search,
@@ -14,7 +14,10 @@ import {
     Eye,
     Building2,
     Hash,
-    DollarSign
+    DollarSign,
+    Upload,
+    FileUp,
+    X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -57,7 +60,9 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 
