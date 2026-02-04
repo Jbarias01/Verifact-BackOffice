@@ -109,7 +109,11 @@ const Certificados = () => {
         setError(null);
         
         try {
-            const response = await axios.get(`${VERIFACT_API_URL}/api/certificado/listado`, {
+            const url = USE_PROXY 
+                ? `${API_BASE_URL}/certificado/listado`
+                : `${API_BASE_URL}/api/certificado/listado`;
+            
+            const response = await axios.get(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
