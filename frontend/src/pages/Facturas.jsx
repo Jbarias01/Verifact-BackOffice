@@ -298,7 +298,7 @@ const Facturas = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 <Card>
                     <CardContent className="pt-4 pb-4">
                         <div className="flex items-center justify-between">
@@ -325,6 +325,28 @@ const Facturas = () => {
                     <CardContent className="pt-4 pb-4">
                         <div className="flex items-center justify-between">
                             <div>
+                                <p className="text-xs text-muted-foreground">Condicional</p>
+                                <p className="text-xl font-bold text-warning">{stats.aceptadasCondicional}</p>
+                            </div>
+                            <AlertTriangle className="h-5 w-5 text-warning" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs text-muted-foreground">En Proceso</p>
+                                <p className="text-xl font-bold text-info">{stats.enProceso}</p>
+                            </div>
+                            <Loader2 className="h-5 w-5 text-info" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center justify-between">
+                            <div>
                                 <p className="text-xs text-muted-foreground">Rechazadas</p>
                                 <p className="text-xl font-bold text-destructive">{stats.rechazadas}</p>
                             </div>
@@ -333,17 +355,6 @@ const Facturas = () => {
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs text-muted-foreground">Pendientes</p>
-                                <p className="text-xl font-bold text-warning">{stats.pendientes}</p>
-                            </div>
-                            <Clock className="h-5 w-5 text-warning" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="col-span-2 sm:col-span-1">
                     <CardContent className="pt-4 pb-4">
                         <div>
                             <p className="text-xs text-muted-foreground">Monto Total</p>
