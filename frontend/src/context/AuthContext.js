@@ -197,7 +197,27 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        // Call logout API to invalidate session on server
+        if (token) {
+            try {
+                const logoutUrl = USE_PROXY 
+                    ? `${API_BASE_URL}/auth/logout`
+                    : `${API_BASE_URL}/api/auth/logout`;
+                
+                await axios.post(logoutUrl, {}, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                console.log('Sesión cerrada en el servidor');
+            } catch (error) {
+                // Even if server logout fails, we still clear local data
+                console.error('Error al cerrar sesión en servidor:', error);
+            }
+        }
+        
+        // Clear local state and storage
         setUser(null);
         setCompany(null);
         setToken(null);
