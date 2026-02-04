@@ -244,6 +244,71 @@ const Facturas = () => {
         fetchFacturas();
     }, [fetchFacturas]);
 
+    // Handle file selection
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.name.toLowerCase().endsWith('.xml')) {
+                toast.error('Solo se permiten archivos XML');
+                return;
+            }
+            setUploadFile(file);
+        }
+    };
+
+    // Handle file upload
+    const handleUpload = async () => {
+        if (!uploadFile || !token) return;
+        
+        setIsUploading(true);
+        
+        try {
+            const url = USE_PROXY 
+                ? `${API_BASE_URL}/facturas/facturaselectronicas`
+                : `${API_BASE_URL}/api/facturas/facturaselectronicas`;
+            
+            const formData = new FormData();
+            formData.append('XmlFile', uploadFile);
+            
+            const response = await axios.post(url, formData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
+            if (response.data.success) {
+                toast.success(response.data.mensaje || 'Factura enviada exitosamente');
+                setIsUploadOpen(false);
+                setUploadFile(null);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                // Refresh the invoice list
+                fetchFacturas();
+            } else {
+                toast.error(response.data.message || 'Error al procesar la factura');
+            }
+        } catch (err) {
+            console.error('Error uploading invoice:', err);
+            if (err.response?.status === 401) {
+                toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+            } else {
+                toast.error(err.response?.data?.detail || 'Error al subir la factura');
+            }
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    // Reset upload modal
+    const resetUploadModal = () => {
+        setUploadFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     // Filter facturas based on status and search term
     const filteredFacturas = facturas.filter(factura => {
         let matchesStatus = statusFilter === 'all';
