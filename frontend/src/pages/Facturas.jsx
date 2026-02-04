@@ -373,14 +373,24 @@ const Facturas = () => {
                         Consulta y gestiona tus facturas electrónicas
                     </p>
                 </div>
-                <Button 
-                    variant="outline" 
-                    onClick={fetchFacturas}
-                    disabled={isLoading}
-                >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-                    Actualizar
-                </Button>
+                <div className="flex gap-2">
+                    <Button 
+                        onClick={() => setIsUploadOpen(true)}
+                        data-testid="upload-invoice-btn"
+                    >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Subir Factura
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        onClick={fetchFacturas}
+                        disabled={isLoading}
+                        data-testid="refresh-invoices-btn"
+                    >
+                        <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+                        Actualizar
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Cards */}
