@@ -69,8 +69,12 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         
         try {
-            // Direct call to Verifact API
-            const response = await axios.post(`${VERIFACT_API_URL}/api/auth/login`, {
+            // Use proxy or direct API based on environment
+            const loginUrl = USE_PROXY 
+                ? `${API_BASE_URL}/auth/login`  // Proxy endpoint
+                : `${API_BASE_URL}/api/auth/login`;  // Direct API endpoint
+            
+            const response = await axios.post(loginUrl, {
                 email,
                 password
             }, {
