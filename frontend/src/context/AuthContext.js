@@ -3,9 +3,9 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-// Use our backend proxy for Verifact API calls
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API_URL = `${BACKEND_URL}/api`;
+// API URL - configurable via environment variable
+// For IIS deployment, set REACT_APP_VERIFACT_API_URL in your environment
+const VERIFACT_API_URL = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf-test.api.verifact.com.do';
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
