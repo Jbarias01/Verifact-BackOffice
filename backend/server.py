@@ -92,6 +92,65 @@ async def get_status_checks():
     
     return status_checks
 
+# =============================================
+# VERIFACT API PROXY ENDPOINTS
+# =============================================
+
+@api_router.post("/auth/login")
+async def proxy_login(login_data: LoginRequest):
+    """
+    Proxy endpoint for Verifact login API.
+    This bypasses CORS and SSL issues by making the request server-side.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+            response = await client.post(
+                f"{VERIFACT_API_URL}/api/auth/login",
+                json={
+                    "email": login_data.email,
+                    "password": login_data.password
+                },
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            # Return the response from Verifact API
+            if response.status_code == 200:
+                return response.json()
+            else:
+                # Try to get error message from response
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error del servidor: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(
+            status_code=503,
+            detail="No se pudo conectar con el servidor de Verifact"
+        )
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(
+            status_code=504,
+            detail="Tiempo de espera agotado al conectar con Verifact"
+        )
+    except Exception as e:
+        logger.error(f"Error proxying login request: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno: {str(e)}"
+        )
+
 # Include the router in the main app
 app.include_router(api_router)
 
