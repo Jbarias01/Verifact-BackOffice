@@ -42,7 +42,7 @@ function App() {
                         {/* Protected Dashboard Routes */}
                         <Route path="/dashboard" element={<DashboardLayout />}>
                             <Route index element={<Dashboard />} />
-                            <Route path="facturas" element={<PlaceholderPage title="Gestión de Facturas" />} />
+                            <Route path="facturas" element={<Facturas />} />
                             <Route path="clientes" element={<PlaceholderPage title="Gestión de Clientes" />} />
                             <Route path="emitidas" element={<PlaceholderPage title="Facturas Emitidas" />} />
                             <Route path="pendientes" element={<PlaceholderPage title="Facturas Pendientes" />} />
