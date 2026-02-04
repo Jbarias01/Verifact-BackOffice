@@ -202,7 +202,7 @@ export const AuthProvider = ({ children }) => {
         
         try {
             // TODO: Implement refresh token endpoint when available
-            // const response = await axios.post(`${VERIFACT_API_URL}/api/auth/refresh`, {
+            // const response = await axios.post(`${API_URL}/auth/refresh`, {
             //     refreshToken
             // });
             // Handle response...
