@@ -151,6 +151,33 @@ async def proxy_login(login_data: LoginRequest):
             detail=f"Error interno: {str(e)}"
         )
 
+@api_router.post("/auth/logout")
+async def proxy_logout(authorization: str = Header(...)):
+    """
+    Proxy endpoint for Verifact logout API.
+    Invalidates the user session on the server.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+            response = await client.post(
+                f"{VERIFACT_API_URL}/api/auth/logout",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                # Even if server returns error, we still want to logout locally
+                return {"message": "Sesión cerrada"}
+                    
+    except Exception as e:
+        logger.error(f"Error during logout: {str(e)}")
+        # Return success anyway since we'll clear local storage
+        return {"message": "Sesión cerrada"}
+
 # =============================================
 # CERTIFICADOS API PROXY ENDPOINTS
 # =============================================
