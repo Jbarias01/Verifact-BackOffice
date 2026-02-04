@@ -190,7 +190,7 @@ const Register = () => {
 
                     {/* Footer */}
                     <p className="text-sm text-primary-foreground/60">
-                        © 2024 Verifact. Todos los derechos reservados.
+                        © {new Date().getFullYear()} Verifact. Todos los derechos reservados.
                     </p>
                 </div>
             </div>
