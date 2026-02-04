@@ -151,6 +151,127 @@ async def proxy_login(login_data: LoginRequest):
             detail=f"Error interno: {str(e)}"
         )
 
+# =============================================
+# CERTIFICADOS API PROXY ENDPOINTS
+# =============================================
+
+@api_router.get("/certificado/listado")
+async def proxy_get_certificados(authorization: str = Header(...)):
+    """
+    Proxy endpoint to get all certificates from Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/certificado/listado",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting certificates: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.post("/certificado/subir")
+async def proxy_upload_certificado(
+    certificado: UploadFile = File(...),
+    password: str = Form(...),
+    authorization: str = Header(...)
+):
+    """
+    Proxy endpoint to upload a certificate (.p12) to Verifact API.
+    """
+    try:
+        # Read file content
+        file_content = await certificado.read()
+        
+        async with httpx.AsyncClient(verify=False, timeout=60.0) as http_client:
+            # Prepare multipart form data
+            files = {
+                'certificado': (certificado.filename, file_content, 'application/x-pkcs12')
+            }
+            data = {
+                'password': password
+            }
+            
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/certificado/subir",
+                files=files,
+                data=data,
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", "Error al procesar el certificado")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": "Error al procesar el certificado"
+                    }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading certificate: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
