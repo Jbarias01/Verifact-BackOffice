@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
+import Certificados from '@/pages/Certificados';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -45,6 +46,7 @@ function App() {
                             <Route path="emitidas" element={<PlaceholderPage title="Facturas Emitidas" />} />
                             <Route path="pendientes" element={<PlaceholderPage title="Facturas Pendientes" />} />
                             <Route path="comprobantes" element={<PlaceholderPage title="Comprobantes Fiscales" />} />
+                            <Route path="certificados" element={<Certificados />} />
                             <Route path="reportes" element={<PlaceholderPage title="Reportes y Análisis" />} />
                             <Route path="empresa" element={<PlaceholderPage title="Datos de la Empresa" />} />
                             <Route path="configuracion" element={<PlaceholderPage title="Configuración" />} />
