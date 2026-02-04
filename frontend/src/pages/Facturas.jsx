@@ -393,9 +393,9 @@ const Facturas = () => {
                                 <SelectContent>
                                     <SelectItem value="all">Todos</SelectItem>
                                     <SelectItem value="Aceptado">Aceptado</SelectItem>
-                                    <SelectItem value="Rechazado">Rechazado</SelectItem>
-                                    <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                    <SelectItem value="AceptadoCondicional">Aceptado Condicional</SelectItem>
                                     <SelectItem value="EnProceso">En Proceso</SelectItem>
+                                    <SelectItem value="Rechazado">Rechazado</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
