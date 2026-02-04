@@ -13,7 +13,8 @@ import {
     FileCheck,
     FileClock,
     BarChart3,
-    HelpCircle
+    HelpCircle,
+    Shield
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ const menuItems = [
     {
         title: 'Administración',
         items: [
+            { name: 'Certificados', icon: Shield, path: '/dashboard/certificados' },
             { name: 'Reportes', icon: BarChart3, path: '/dashboard/reportes' },
             { name: 'Empresa', icon: Building2, path: '/dashboard/empresa' },
             { name: 'Configuración', icon: Settings, path: '/dashboard/configuracion' },
