@@ -28,9 +28,139 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [company, setCompany] = useState(null);
     const [token, setToken] = useState(null);
-    const [refreshToken, setRefreshToken] = useState(null);
+    const [refreshTokenState, setRefreshTokenState] = useState(null);
+    const [tokenExpiry, setTokenExpiry] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const refreshTimeoutRef = useRef(null);
+    const isRefreshingRef = useRef(false);
+
+    const clearAuthData = useCallback(() => {
+        localStorage.removeItem('verifact_token');
+        localStorage.removeItem('verifact_refresh_token');
+        localStorage.removeItem('verifact_user');
+        localStorage.removeItem('verifact_company');
+        localStorage.removeItem('verifact_token_expiry');
+        delete axios.defaults.headers.common['Authorization'];
+        
+        if (refreshTimeoutRef.current) {
+            clearTimeout(refreshTimeoutRef.current);
+            refreshTimeoutRef.current = null;
+        }
+    }, []);
+
+    const handleLogout = useCallback(() => {
+        setUser(null);
+        setCompany(null);
+        setToken(null);
+        setRefreshTokenState(null);
+        setTokenExpiry(null);
+        setIsAuthenticated(false);
+        clearAuthData();
+    }, [clearAuthData]);
+
+    // Function to refresh the authentication token
+    const refreshAuthToken = useCallback(async () => {
+        const storedRefreshToken = localStorage.getItem('verifact_refresh_token');
+        const storedToken = localStorage.getItem('verifact_token');
+        
+        if (!storedRefreshToken || !storedToken || isRefreshingRef.current) {
+            return false;
+        }
+        
+        isRefreshingRef.current = true;
+        
+        try {
+            const refreshUrl = USE_PROXY 
+                ? `${API_BASE_URL}/auth/refresh`
+                : `${API_BASE_URL}/api/auth/refresh`;
+            
+            const response = await axios.post(refreshUrl, {
+                refreshToken: storedRefreshToken
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${storedToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = response.data;
+
+            if (data.success) {
+                // Update tokens in state and storage
+                setToken(data.token);
+                setRefreshTokenState(data.refreshToken);
+                setTokenExpiry(new Date(data.expira));
+                
+                localStorage.setItem('verifact_token', data.token);
+                localStorage.setItem('verifact_refresh_token', data.refreshToken);
+                localStorage.setItem('verifact_token_expiry', data.expira);
+                
+                // Update axios default header
+                axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+                
+                // Update user data if provided
+                if (data.usuario) {
+                    const userData = {
+                        id: data.usuario.id,
+                        email: data.usuario.email,
+                        name: data.usuario.nombre,
+                        role: data.usuario.rol,
+                        avatar: null
+                    };
+                    const companyData = {
+                        id: data.usuario.clienteId,
+                        name: data.usuario.clienteNombre,
+                        rnc: data.usuario.clienteRNC,
+                        address: '',
+                        phone: '',
+                        email: data.usuario.email
+                    };
+                    setUser(userData);
+                    setCompany(companyData);
+                    localStorage.setItem('verifact_user', JSON.stringify(userData));
+                    localStorage.setItem('verifact_company', JSON.stringify(companyData));
+                }
+                
+                console.log('Token renovado exitosamente');
+                isRefreshingRef.current = false;
+                return true;
+            } else {
+                console.error('Error al renovar token:', data.message);
+                handleLogout();
+                isRefreshingRef.current = false;
+                return false;
+            }
+        } catch (error) {
+            console.error('Error al renovar token:', error);
+            handleLogout();
+            isRefreshingRef.current = false;
+            return false;
+        }
+    }, [handleLogout]);
+
+    // Schedule token refresh before expiry
+    const scheduleTokenRefresh = useCallback((expiryDate) => {
+        if (refreshTimeoutRef.current) {
+            clearTimeout(refreshTimeoutRef.current);
+        }
+        
+        const now = new Date().getTime();
+        const expiry = new Date(expiryDate).getTime();
+        const timeUntilRefresh = expiry - now - TOKEN_REFRESH_THRESHOLD;
+        
+        if (timeUntilRefresh > 0) {
+            console.log(`Token refresh programado en ${Math.round(timeUntilRefresh / 1000 / 60)} minutos`);
+            refreshTimeoutRef.current = setTimeout(async () => {
+                console.log('Iniciando renovación automática de token...');
+                await refreshAuthToken();
+            }, timeUntilRefresh);
+        } else if (expiry > now) {
+            // Token is close to expiry, refresh immediately
+            console.log('Token próximo a expirar, renovando ahora...');
+            refreshAuthToken();
+        }
+    }, [refreshAuthToken]);
 
     useEffect(() => {
         // Check for stored auth data on mount
@@ -38,35 +168,50 @@ export const AuthProvider = ({ children }) => {
         const storedRefreshToken = localStorage.getItem('verifact_refresh_token');
         const storedUser = localStorage.getItem('verifact_user');
         const storedCompany = localStorage.getItem('verifact_company');
-        const tokenExpiry = localStorage.getItem('verifact_token_expiry');
+        const storedTokenExpiry = localStorage.getItem('verifact_token_expiry');
         
         if (storedToken && storedUser && storedCompany) {
+            const expiryDate = storedTokenExpiry ? new Date(storedTokenExpiry) : null;
+            
             // Check if token is still valid
-            if (tokenExpiry && new Date(tokenExpiry) > new Date()) {
+            if (expiryDate && expiryDate > new Date()) {
                 setToken(storedToken);
-                setRefreshToken(storedRefreshToken);
+                setRefreshTokenState(storedRefreshToken);
+                setTokenExpiry(expiryDate);
                 setUser(JSON.parse(storedUser));
                 setCompany(JSON.parse(storedCompany));
                 setIsAuthenticated(true);
                 
                 // Set default axios header
                 axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+                
+                // Schedule token refresh
+                scheduleTokenRefresh(expiryDate);
+            } else if (storedRefreshToken) {
+                // Token expired but we have refresh token, try to refresh
+                console.log('Token expirado, intentando renovar...');
+                refreshAuthToken().then(success => {
+                    if (success) {
+                        const newExpiry = localStorage.getItem('verifact_token_expiry');
+                        if (newExpiry) {
+                            scheduleTokenRefresh(newExpiry);
+                        }
+                    }
+                });
             } else {
-                // Token expired, clear storage
+                // No valid tokens, clear storage
                 clearAuthData();
             }
         }
         setIsLoading(false);
-    }, []);
-
-    const clearAuthData = () => {
-        localStorage.removeItem('verifact_token');
-        localStorage.removeItem('verifact_refresh_token');
-        localStorage.removeItem('verifact_user');
-        localStorage.removeItem('verifact_company');
-        localStorage.removeItem('verifact_token_expiry');
-        delete axios.defaults.headers.common['Authorization'];
-    };
+        
+        // Cleanup on unmount
+        return () => {
+            if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+            }
+        };
+    }, [clearAuthData, scheduleTokenRefresh, refreshAuthToken]);
 
     const login = async (email, password) => {
         setIsLoading(true);
