@@ -50,6 +50,12 @@
 |----------|--------|-------------|
 | `/api/auth/login` | POST | Autenticación |
 | `/api/auth/logout` | POST | Cierre de sesión |
+| `/api/auth/refresh` | POST | ✅ Renovar token JWT |
+| `/api/certificado/listado` | GET | Listar certificados |
+| `/api/certificado/subir` | POST | Subir certificado .p12 |
+| `/api/facturas/getfacturaselectronicas` | GET | Listar facturas |
+| `/api/facturas/facturaselectronicas` | POST | Subir factura XML |
+| `/api/auth/logout` | POST | Cierre de sesión |
 | `/api/certificado/listado` | GET | Listar certificados |
 | `/api/certificado/subir` | POST | Subir certificado .p12 |
 | `/api/facturas/getfacturaselectronicas` | GET | Listar facturas |
