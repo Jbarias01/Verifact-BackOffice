@@ -104,6 +104,41 @@ const getToday = () => {
     return new Date();
 };
 
+// DGII Consultation URL
+const DGII_CONSULTA_URL = 'https://ecf.dgii.gov.do/certecf/ConsultaTimbre';
+
+// Helper to build DGII consultation URL
+const buildDgiiUrl = (factura) => {
+    if (!factura) return null;
+    
+    // Format fecha emisión (from createdAt)
+    let fechaEmision = '';
+    if (factura.createdAt) {
+        const date = new Date(factura.createdAt);
+        fechaEmision = format(date, 'dd-MM-yyyy');
+    }
+    
+    // Format fecha firma (from fechaHoraFirma)
+    let fechaFirma = '';
+    if (factura.fechaHoraFirma) {
+        // fechaHoraFirma puede venir como ISO o como string
+        const date = new Date(factura.fechaHoraFirma);
+        fechaFirma = format(date, 'dd-MM-yyyy HH:mm:ss');
+    }
+    
+    const params = new URLSearchParams({
+        RncEmisor: factura.rnc || '',
+        RncComprador: factura.rncComprador || '',
+        ENCF: factura.e_NCF || '',
+        FechaEmision: fechaEmision,
+        MontoTotal: (factura.monto || 0).toFixed(2),
+        FechaFirma: fechaFirma,
+        CodigoSeguridad: factura.codigoSeguridad || ''
+    });
+    
+    return `${DGII_CONSULTA_URL}?${params.toString()}`;
+};
+
 const statusConfig = {
     'Aceptado': { 
         label: 'Aceptado', 
