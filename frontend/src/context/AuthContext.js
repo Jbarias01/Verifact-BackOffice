@@ -372,36 +372,14 @@ export const AuthProvider = ({ children }) => {
         }
         
         // Clear local state and storage
-        setUser(null);
-        setCompany(null);
-        setToken(null);
-        setRefreshToken(null);
-        setIsAuthenticated(false);
-        clearAuthData();
-    };
-
-    // Function to refresh token (can be used for token renewal)
-    const refreshAuthToken = async () => {
-        if (!refreshToken) return false;
-        
-        try {
-            // TODO: Implement refresh token endpoint when available
-            // const response = await axios.post(`${API_URL}/auth/refresh`, {
-            //     refreshToken
-            // });
-            // Handle response...
-            return true;
-        } catch (error) {
-            console.error('Token refresh error:', error);
-            logout();
-            return false;
-        }
+        handleLogout();
     };
 
     const value = {
         user,
         company,
         token,
+        tokenExpiry,
         isLoading,
         isAuthenticated,
         login,
