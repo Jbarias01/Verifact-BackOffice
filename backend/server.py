@@ -178,6 +178,62 @@ async def proxy_logout(authorization: str = Header(...)):
         # Return success anyway since we'll clear local storage
         return {"message": "Sesión cerrada"}
 
+class RefreshTokenRequest(BaseModel):
+    refreshToken: str
+
+@api_router.post("/auth/refresh")
+async def proxy_refresh_token(
+    refresh_data: RefreshTokenRequest,
+    authorization: str = Header(...)
+):
+    """
+    Proxy endpoint for Verifact refresh token API.
+    Renews the JWT token using the refresh token.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/auth/refresh",
+                json={
+                    "refreshToken": refresh_data.refreshToken
+                },
+                headers={
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                return {
+                    "success": False,
+                    "message": "Sesión expirada. Por favor, inicie sesión nuevamente."
+                }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except Exception as e:
+        logger.error(f"Error refreshing token: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # =============================================
 # CERTIFICADOS API PROXY ENDPOINTS
 # =============================================
