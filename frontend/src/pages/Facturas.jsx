@@ -599,7 +599,7 @@ const Facturas = () => {
                                         <TableHead className="text-right">Monto</TableHead>
                                         <TableHead>Fecha Emisión</TableHead>
                                         <TableHead>Estado</TableHead>
-                                        <TableHead className="w-[80px]">Acciones</TableHead>
+                                        <TableHead className="w-[100px]">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -632,14 +632,29 @@ const Facturas = () => {
                                                 {getStatusBadge(factura.estado)}
                                             </TableCell>
                                             <TableCell>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => openDetail(factura)}
-                                                    className="h-8 w-8"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => openDetail(factura)}
+                                                        className="h-8 w-8"
+                                                        title="Ver detalle"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    {factura.codigoSeguridad && factura.fechaHoraFirma && (
+                                                        <a
+                                                            href={buildDgiiUrl(factura)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                            title="Consultar en DGII"
+                                                            data-testid="dgii-link"
+                                                        >
+                                                            <ExternalLink className="h-4 w-4 text-primary" />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
