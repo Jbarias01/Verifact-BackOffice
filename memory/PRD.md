@@ -8,6 +8,7 @@
 ### 1. Autenticación
 - **Login**: Página de inicio de sesión conectada al API real de Verifact
 - **Logout**: Cierre de sesión con invalidación del token
+- **Refresh Token** ✅ NUEVO: Renovación automática del JWT antes de expirar
 - **Registro de Empresa**: Wizard de 3 pasos para registrar empresas
 - Formato RNC validado: XXX-XXXXX-X (Registro Nacional del Contribuyente)
 
