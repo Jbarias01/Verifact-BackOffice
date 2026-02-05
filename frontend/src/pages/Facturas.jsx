@@ -724,6 +724,21 @@ const Facturas = () => {
                                 <p className="text-xs text-muted-foreground">Track ID</p>
                                 <p className="text-xs font-mono break-all text-muted-foreground">{selectedFactura.trackId}</p>
                             </div>
+                            
+                            {/* Botón consultar DGII */}
+                            {selectedFactura.codigoSeguridad && selectedFactura.fechaHoraFirma && (
+                                <div className="pt-2">
+                                    <a
+                                        href={buildDgiiUrl(selectedFactura)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                                    >
+                                        <ExternalLink className="h-4 w-4" />
+                                        Consultar en DGII
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     )}
                 </DialogContent>
