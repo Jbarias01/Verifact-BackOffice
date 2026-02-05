@@ -469,7 +469,7 @@ const Facturas = () => {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                         <DatePicker
                             date={fechaInicio}
                             onSelect={setFechaInicio}
@@ -508,9 +508,7 @@ const Facturas = () => {
                                 />
                             </div>
                         </div>
-                    </div>
-                    <div className="flex justify-end mt-4">
-                        <Button onClick={fetchFacturas} disabled={isLoading}>
+                        <Button onClick={fetchFacturas} disabled={isLoading} className="h-10">
                             <Search className="h-4 w-4 mr-2" />
                             Buscar
                         </Button>
