@@ -253,11 +253,14 @@ export const AuthProvider = ({ children }) => {
                     email: data.usuario.email
                 };
 
+                const expiryDate = new Date(data.expira);
+
                 // Save to state
                 setUser(userData);
                 setCompany(companyData);
                 setToken(data.token);
-                setRefreshToken(data.refreshToken);
+                setRefreshTokenState(data.refreshToken);
+                setTokenExpiry(expiryDate);
                 setIsAuthenticated(true);
                 
                 // Save to localStorage
@@ -269,6 +272,9 @@ export const AuthProvider = ({ children }) => {
                 
                 // Set default axios header for future requests
                 axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+                
+                // Schedule automatic token refresh
+                scheduleTokenRefresh(expiryDate);
                 
                 return { success: true };
             } else {
