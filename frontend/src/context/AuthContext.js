@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
@@ -12,6 +12,9 @@ const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://e
 // Use proxy in preview, direct API in production
 const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
 const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
+
+// Time before expiry to refresh token (5 minutes)
+const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000;
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
