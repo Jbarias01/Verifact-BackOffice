@@ -111,19 +111,13 @@ const DGII_CONSULTA_URL = 'https://ecf.dgii.gov.do/certecf/ConsultaTimbre';
 const buildDgiiUrl = (factura) => {
     if (!factura) return null;
     
-    // Format fecha emisión (from createdAt)
-    let fechaEmision = '';
-    if (factura.createdAt) {
-        const date = new Date(factura.createdAt);
-        fechaEmision = format(date, 'dd-MM-yyyy');
-    }
-    
     // Format fecha firma (from fechaHoraFirma)
+    let fechaEmision = '';
     let fechaFirma = '';
     if (factura.fechaHoraFirma) {
-        // fechaHoraFirma puede venir como ISO o como string
         const date = new Date(factura.fechaHoraFirma);
-        fechaFirma = format(date, 'dd-MM-yyyy HH:mm:ss');
+        fechaEmision = format(date, 'dd-MM-yyyy'); // Solo la fecha
+        fechaFirma = format(date, 'dd-MM-yyyy HH:mm:ss'); // Fecha y hora completa
     }
     
     const params = new URLSearchParams({
