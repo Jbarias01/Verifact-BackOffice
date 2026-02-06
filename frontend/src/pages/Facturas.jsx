@@ -651,7 +651,7 @@ const Facturas = () => {
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
-                                                    {factura.codigoSeguridad && factura.fechaHoraFirma && (
+                                                    {factura.codigoSeguridad && factura.fechaHoraFirma && factura.estado && (
                                                         <a
                                                             href={buildDgiiUrl(factura)}
                                                             target="_blank"
