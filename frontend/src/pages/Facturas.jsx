@@ -371,7 +371,7 @@ const Facturas = () => {
 
     const getStatusBadge = (estado) => {
         const config = statusConfig[estado] || { 
-            label: estado || 'Desconocido', 
+            label: 'En Cola', 
             icon: Clock,
             className: 'bg-muted text-muted-foreground border-muted' 
         };
