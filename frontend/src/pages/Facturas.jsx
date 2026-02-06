@@ -735,7 +735,7 @@ const Facturas = () => {
                             </div>
                             
                             {/* Botón consultar DGII */}
-                            {selectedFactura.codigoSeguridad && selectedFactura.fechaHoraFirma && (
+                            {selectedFactura.codigoSeguridad && selectedFactura.fechaHoraFirma && selectedFactura.estado && (
                                 <div className="pt-2">
                                     <a
                                         href={buildDgiiUrl(selectedFactura)}
