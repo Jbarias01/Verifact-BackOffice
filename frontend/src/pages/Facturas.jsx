@@ -104,8 +104,8 @@ const getToday = () => {
     return new Date();
 };
 
-// DGII Consultation URL
-const DGII_CONSULTA_URL = 'https://ecf.dgii.gov.do/certecf/ConsultaTimbre';
+// DGII Consultation URL (Ambiente de Pruebas)
+const DGII_CONSULTA_URL = 'https://ecf.dgii.gov.do/testecf/consultatimbre';
 
 // Helper to build DGII consultation URL
 const buildDgiiUrl = (factura) => {
