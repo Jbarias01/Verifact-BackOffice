@@ -521,6 +521,7 @@ const Facturas = () => {
                                     <SelectItem value="Aceptado">Aceptado</SelectItem>
                                     <SelectItem value="AceptadoCondicional">Aceptado Condicional</SelectItem>
                                     <SelectItem value="EnProceso">En Proceso</SelectItem>
+                                    <SelectItem value="EnCola">En Cola</SelectItem>
                                     <SelectItem value="Rechazado">Rechazado</SelectItem>
                                 </SelectContent>
                             </Select>
