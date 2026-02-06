@@ -427,7 +427,7 @@ const Facturas = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
                 <Card>
                     <CardContent className="pt-4 pb-4">
                         <div className="flex items-center justify-between">
@@ -469,6 +469,17 @@ const Facturas = () => {
                                 <p className="text-xl font-bold text-info">{stats.enProceso}</p>
                             </div>
                             <Loader2 className="h-5 w-5 text-info" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-4 pb-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs text-muted-foreground">En Cola</p>
+                                <p className="text-xl font-bold text-muted-foreground">{stats.enCola}</p>
+                            </div>
+                            <Clock className="h-5 w-5 text-muted-foreground" />
                         </div>
                     </CardContent>
                 </Card>
