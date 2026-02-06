@@ -348,6 +348,8 @@ const Facturas = () => {
                 matchesStatus = factura.estado === 'AceptadoCondicional' || factura.estado === 'Aceptado Condicional';
             } else if (statusFilter === 'EnProceso') {
                 matchesStatus = factura.estado === 'EnProceso' || factura.estado === 'En Proceso';
+            } else if (statusFilter === 'EnCola') {
+                matchesStatus = !factura.estado || factura.estado === null || factura.estado === '';
             } else {
                 matchesStatus = factura.estado === statusFilter;
             }
