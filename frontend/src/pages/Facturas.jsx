@@ -367,6 +367,7 @@ const Facturas = () => {
         aceptadas: facturas.filter(f => f.estado === 'Aceptado').length,
         aceptadasCondicional: facturas.filter(f => f.estado === 'AceptadoCondicional' || f.estado === 'Aceptado Condicional').length,
         enProceso: facturas.filter(f => f.estado === 'EnProceso' || f.estado === 'En Proceso').length,
+        enCola: facturas.filter(f => !f.estado || f.estado === null || f.estado === '').length,
         rechazadas: facturas.filter(f => f.estado === 'Rechazado').length,
         montoTotal: facturas.reduce((sum, f) => sum + (f.monto || 0), 0)
     };
