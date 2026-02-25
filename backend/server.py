@@ -235,6 +235,90 @@ async def proxy_refresh_token(
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 # =============================================
+# CLIENTES (REGISTRO) API PROXY ENDPOINTS
+# =============================================
+
+class RegisterClienteRequest(BaseModel):
+    companyName: str
+    rnc: str
+    companyEmail: str
+    phone: Optional[str] = None
+    fiscalAddress: Optional[str] = None
+    userFullName: str
+    userEmail: str
+    userPassword: str
+
+@api_router.post("/clientes/registrar")
+async def proxy_register_cliente(register_data: RegisterClienteRequest):
+    """
+    Proxy endpoint to register a new client/company in Verifact API.
+    This endpoint does not require authentication.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/clientes/registrar",
+                json={
+                    "companyName": register_data.companyName,
+                    "rnc": register_data.rnc,
+                    "companyEmail": register_data.companyEmail,
+                    "phone": register_data.phone or "",
+                    "fiscalAddress": register_data.fiscalAddress or "",
+                    "userFullName": register_data.userFullName,
+                    "userEmail": register_data.userEmail,
+                    "userPassword": register_data.userPassword
+                },
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return {
+                    "success": True,
+                    "clienteId": result.get("clienteId"),
+                    "clienteRNC": result.get("clienteRNC"),
+                    "usuarioId": result.get("usuarioId"),
+                    "usuarioEmail": result.get("usuarioEmail")
+                }
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message") or error_data.get("title") or "Datos de registro inválidos"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": "Datos de registro inválidos"
+                    }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message") or f"Error: {response.status_code}"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except Exception as e:
+        logger.error(f"Error registering client: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+# =============================================
 # CERTIFICADOS API PROXY ENDPOINTS
 # =============================================
 
