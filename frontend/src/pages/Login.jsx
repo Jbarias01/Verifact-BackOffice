@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, FileCheck, ArrowRight, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, FileCheck, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login, isAuthenticated, isLoading } = useAuth();
     
     const [email, setEmail] = useState('');
@@ -17,7 +18,20 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Check for success message from registration
+    useEffect(() => {
+        if (location.state?.message) {
+            setSuccessMessage(location.state.message);
+            if (location.state.email) {
+                setEmail(location.state.email);
+            }
+            // Clear the state to prevent showing message on refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     if (isAuthenticated) {
         return <Navigate to="/dashboard" replace />;
@@ -26,6 +40,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSuccessMessage('');
         setIsSubmitting(true);
 
         if (!email || !password) {
