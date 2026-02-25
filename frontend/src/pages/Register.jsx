@@ -126,7 +126,13 @@ const Register = () => {
         const result = await register(companyData, userData);
         
         if (result.success) {
-            navigate('/dashboard');
+            // Registration successful - redirect to login
+            navigate('/login', { 
+                state: { 
+                    message: result.message || 'Registro exitoso. Por favor inicia sesión.',
+                    email: userData.email 
+                } 
+            });
         } else {
             setError(result.error || 'Error en el registro');
         }
