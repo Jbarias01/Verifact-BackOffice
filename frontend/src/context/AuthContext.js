@@ -314,38 +314,62 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         
         try {
-            // TODO: Implement registration endpoint when available
-            // For now, we'll use mock registration
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const registerUrl = USE_PROXY 
+                ? `${API_BASE_URL}/clientes/registrar`
+                : `${API_BASE_URL}/api/clientes/registrar`;
             
-            const newUser = {
-                id: Date.now().toString(),
-                email: userData.email,
-                name: userData.name,
-                role: 'admin',
-                avatar: null
+            // Map form data to API expected format
+            const requestData = {
+                companyName: companyData.companyName,
+                rnc: companyData.rnc.replace(/-/g, ''), // Remove dashes from RNC
+                companyEmail: companyData.companyEmail,
+                phone: companyData.phone || '',
+                fiscalAddress: companyData.address || '',
+                userFullName: userData.name,
+                userEmail: userData.email,
+                userPassword: userData.password
             };
             
-            const newCompany = {
-                id: Date.now().toString(),
-                name: companyData.companyName,
-                rnc: companyData.rnc,
-                address: companyData.address,
-                phone: companyData.phone,
-                email: companyData.companyEmail
-            };
+            const response = await axios.post(registerUrl, requestData, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
 
-            setUser(newUser);
-            setCompany(newCompany);
-            setIsAuthenticated(true);
-            
-            localStorage.setItem('verifact_user', JSON.stringify(newUser));
-            localStorage.setItem('verifact_company', JSON.stringify(newCompany));
-            
-            return { success: true };
+            const data = response.data;
+
+            if (data.success) {
+                // Registration successful - redirect to login
+                // The user needs to login with their new credentials
+                return { 
+                    success: true, 
+                    message: 'Registro exitoso. Por favor inicia sesión con tus credenciales.',
+                    requireLogin: true
+                };
+            } else {
+                return { 
+                    success: false, 
+                    error: data.message || 'Error en el registro' 
+                };
+            }
         } catch (error) {
             console.error('Registration error:', error);
-            return { success: false, error: 'Error en el registro' };
+            
+            let errorMessage = 'Error en el registro';
+            
+            if (error.response) {
+                if (error.response.status === 400) {
+                    errorMessage = error.response.data?.message || 'Datos de registro inválidos';
+                } else if (error.response.status === 500) {
+                    errorMessage = 'Error en el servidor. Intente más tarde.';
+                } else {
+                    errorMessage = error.response.data?.message || error.response.data?.detail || 'Error en el registro';
+                }
+            } else if (error.request) {
+                errorMessage = 'No se pudo conectar con el servidor';
+            }
+            
+            return { success: false, error: errorMessage };
         } finally {
             setIsLoading(false);
         }
