@@ -260,7 +260,7 @@ const Facturas = () => {
         } catch (err) {
             console.error('Error fetching invoices:', err);
             if (err.response?.status === 401) {
-                setError('Sesión expirada. Por favor, inicie sesión nuevamente.');
+                setError('No autorizado. Verifique sus permisos o inicie sesión nuevamente.');
             } else {
                 setError('Error al cargar las facturas');
             }
