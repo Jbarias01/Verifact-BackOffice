@@ -322,7 +322,7 @@ const Facturas = () => {
         } catch (err) {
             console.error('Error uploading invoice:', err);
             if (err.response?.status === 401) {
-                toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+                toast.error('No autorizado. Verifique sus permisos o inicie sesión nuevamente.');
             } else {
                 toast.error(err.response?.data?.detail || 'Error al subir la factura');
             }
