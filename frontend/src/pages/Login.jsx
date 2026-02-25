@@ -135,6 +135,13 @@ const Login = () => {
                         </p>
                     </div>
 
+                    {successMessage && (
+                        <div className="mb-6 p-4 rounded-lg bg-success/10 border border-success/20 text-success text-sm flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                            {successMessage}
+                        </div>
+                    )}
+
                     {error && (
                         <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                             {error}
