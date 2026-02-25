@@ -249,10 +249,13 @@ class RegisterClienteRequest(BaseModel):
     userPassword: str
 
 @api_router.post("/clientes/registrar")
-async def proxy_register_cliente(register_data: RegisterClienteRequest):
+async def proxy_register_cliente(
+    register_data: RegisterClienteRequest,
+    authorization: str = Header(...)
+):
     """
     Proxy endpoint to register a new client/company in Verifact API.
-    This endpoint does not require authentication.
+    Requires authentication token.
     """
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
@@ -269,6 +272,7 @@ async def proxy_register_cliente(register_data: RegisterClienteRequest):
                     "userPassword": register_data.userPassword
                 },
                 headers={
+                    "Authorization": authorization,
                     "Content-Type": "application/json",
                     "Accept": "*/*"
                 }
