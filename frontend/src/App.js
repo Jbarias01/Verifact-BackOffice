@@ -16,6 +16,7 @@ import Configuracion from '@/pages/Configuracion';
 import RecepcionEcf from '@/pages/RecepcionEcf';
 import Comprobantes from '@/pages/Comprobantes';
 import EcfEmitidos from '@/pages/EcfEmitidos';
+import EcfRecibidosReport from '@/pages/EcfRecibidosReport';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
