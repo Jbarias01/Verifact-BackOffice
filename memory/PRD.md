@@ -176,4 +176,4 @@
 
 ## Última Actualización
 - Fecha: 28 de febrero de 2026
-- Tarea completada: Módulo e-CF Emitidos con filtros (desde, hasta, estado, rncReceptor)
+- Tarea completada: Módulo e-CF Recibidos con filtros (rncEmisor, rncReceptor, desde, hasta, estado)
