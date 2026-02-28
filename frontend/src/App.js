@@ -52,7 +52,7 @@ function App() {
                             <Route path="clientes" element={<PlaceholderPage title="Gestión de Clientes" />} />
                             <Route path="emitidas" element={<PlaceholderPage title="Facturas Emitidas" />} />
                             <Route path="pendientes" element={<PlaceholderPage title="Facturas Pendientes" />} />
-                            <Route path="comprobantes" element={<PlaceholderPage title="Comprobantes Fiscales" />} />
+                            <Route path="comprobantes" element={<Comprobantes />} />
                             <Route path="certificados" element={<Certificados />} />
                             <Route path="usuarios" element={<Usuarios />} />
                             <Route path="reportes" element={<PlaceholderPage title="Reportes y Análisis" />} />
