@@ -196,7 +196,7 @@ const RecepcionEcf = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [fetchEmisorName, emisorNames]);
 
     useEffect(() => {
         fetchEcfRecibidos();
