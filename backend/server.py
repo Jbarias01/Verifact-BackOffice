@@ -204,7 +204,7 @@ async def proxy_refresh_token(
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 return {
@@ -337,7 +337,7 @@ async def proxy_get_certificados(authorization: str = Header(...)):
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 raise HTTPException(status_code=401, detail="No autorizado")
@@ -398,7 +398,7 @@ async def proxy_upload_certificado(
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 raise HTTPException(status_code=401, detail="No autorizado")
@@ -551,7 +551,7 @@ async def proxy_get_facturas(
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 raise HTTPException(status_code=401, detail="No autorizado")
@@ -614,7 +614,7 @@ async def proxy_get_usuarios(authorization: str = Header(...)):
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 raise HTTPException(status_code=401, detail="No autorizado")
@@ -658,7 +658,7 @@ async def proxy_get_usuario(user_id: str, authorization: str = Header(...)):
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 raise HTTPException(status_code=401, detail="No autorizado")
@@ -711,7 +711,7 @@ async def proxy_create_usuario(user_data: CreateUserRequest, authorization: str 
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 raise HTTPException(status_code=401, detail="No autorizado")
@@ -780,7 +780,7 @@ async def proxy_update_usuario(user_id: str, user_data: UpdateUserRequest, autho
                 }
             )
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 401:
                 raise HTTPException(status_code=401, detail="No autorizado")
