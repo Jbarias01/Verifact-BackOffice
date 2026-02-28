@@ -517,6 +517,12 @@ const RecepcionEcf = () => {
                                 {getStatusBadge(selectedEcf.estado)}
                             </div>
                             
+                            {/* Emisor Name */}
+                            <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                                <p className="text-xs text-muted-foreground">Emisor</p>
+                                <p className="text-sm font-bold">{emisorNames[selectedEcf.rncEmisor] || 'Cargando...'}</p>
+                            </div>
+                            
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <p className="text-xs text-muted-foreground">RNC Emisor</p>
