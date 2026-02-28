@@ -1145,6 +1145,80 @@ async def proxy_get_ecf_emitidos(
         logger.error(f"Error getting issued eCF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+# =============================================
+# eCF RECIBIDOS (CON FILTROS) API PROXY ENDPOINT
+# =============================================
+
+@api_router.get("/fe/recepcion/ecf/recibidos/filtros")
+async def proxy_get_ecf_recibidos_filtros(
+    authorization: str = Header(...),
+    rncEmisor: Optional[str] = None,
+    rncReceptor: Optional[str] = None,
+    desde: Optional[str] = None,
+    hasta: Optional[str] = None,
+    estado: Optional[str] = None
+):
+    """
+    Proxy endpoint to get received eCF documents with filters from Verifact API.
+    Supports filtering by RNC emisor, RNC receptor, date range, and status.
+    """
+    try:
+        # Build query parameters
+        params = {}
+        if rncEmisor:
+            params['rncEmisor'] = rncEmisor
+        if rncReceptor:
+            params['rncReceptor'] = rncReceptor
+        if desde:
+            params['desde'] = desde
+        if hasta:
+            params['hasta'] = hasta
+        if estado:
+            params['estado'] = estado
+        
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/fe/recepcion/api/ecf/recibidos",
+                params=params,
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "total": 0,
+                        "ecfRecibidos": [],
+                        "message": error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "total": 0,
+                        "ecfRecibidos": [],
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting received eCF with filters: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
