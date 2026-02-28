@@ -56,7 +56,7 @@ function App() {
                             <Route path="comprobantes" element={<Comprobantes />} />
                             <Route path="certificados" element={<Certificados />} />
                             <Route path="usuarios" element={<Usuarios />} />
-                            <Route path="reportes" element={<PlaceholderPage title="Reportes y Análisis" />} />
+                            <Route path="reportes" element={<EcfEmitidos />} />
                             <Route path="empresa" element={<Empresa />} />
                             <Route path="configuracion" element={<Configuracion />} />
                         </Route>
