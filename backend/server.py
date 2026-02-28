@@ -720,7 +720,7 @@ async def proxy_create_usuario(user_data: CreateUserRequest, authorization: str 
                     error_data = response.json()
                     return {
                         "success": False,
-                        "message": error_data.get("message") or error_data.get("title") or "Datos inválidos"
+                        "message": error_data.get("error") or error_data.get("message") or error_data.get("title") or "Datos inválidos"
                     }
                 except:
                     return {
@@ -732,7 +732,7 @@ async def proxy_create_usuario(user_data: CreateUserRequest, authorization: str 
                     error_data = response.json()
                     return {
                         "success": False,
-                        "message": error_data.get("message", f"Error: {response.status_code}")
+                        "message": error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
                     }
                 except:
                     return {
