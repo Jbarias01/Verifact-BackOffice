@@ -54,7 +54,7 @@ function App() {
                             <Route path="usuarios" element={<Usuarios />} />
                             <Route path="reportes" element={<PlaceholderPage title="Reportes y Análisis" />} />
                             <Route path="empresa" element={<Empresa />} />
-                            <Route path="configuracion" element={<PlaceholderPage title="Configuración" />} />
+                            <Route path="configuracion" element={<Configuracion />} />
                         </Route>
                         
                         {/* Default redirect */}
