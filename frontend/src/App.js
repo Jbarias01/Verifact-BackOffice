@@ -58,6 +58,7 @@ function App() {
                             <Route path="certificados" element={<Certificados />} />
                             <Route path="usuarios" element={<Usuarios />} />
                             <Route path="reportes" element={<EcfEmitidos />} />
+                            <Route path="reportes-recibidos" element={<EcfRecibidosReport />} />
                             <Route path="empresa" element={<Empresa />} />
                             <Route path="configuracion" element={<Configuracion />} />
                         </Route>
