@@ -124,8 +124,11 @@ const statusConfig = {
 };
 
 const RecepcionEcf = () => {
+    const { token } = useAuth();
+    
     // State
     const [ecfRecibidos, setEcfRecibidos] = useState([]);
+    const [emisorNames, setEmisorNames] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -135,6 +138,32 @@ const RecepcionEcf = () => {
     const [isXmlPreviewOpen, setIsXmlPreviewOpen] = useState(false);
     const [selectedEcf, setSelectedEcf] = useState(null);
     const [xmlContent, setXmlContent] = useState('');
+
+    // Fetch emisor name by RNC
+    const fetchEmisorName = useCallback(async (rnc) => {
+        if (!token || !rnc || emisorNames[rnc]) return;
+        
+        try {
+            const url = USE_PROXY 
+                ? `${API_BASE_URL}/rnc/consultar/${rnc}`
+                : `${API_BASE_URL}/api/rnc/consultar-rnc/${rnc}`;
+            
+            const response = await axios.get(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.data?.name) {
+                setEmisorNames(prev => ({
+                    ...prev,
+                    [rnc]: response.data.name
+                }));
+            }
+        } catch (err) {
+            console.error('Error fetching emisor name:', err);
+        }
+    }, [token, emisorNames]);
 
     // Fetch eCF recibidos
     const fetchEcfRecibidos = useCallback(async () => {
@@ -150,6 +179,14 @@ const RecepcionEcf = () => {
             
             if (Array.isArray(response.data)) {
                 setEcfRecibidos(response.data);
+                
+                // Get unique RNCs and fetch their names
+                const uniqueRncs = [...new Set(response.data.map(e => e.rncEmisor).filter(Boolean))];
+                uniqueRncs.forEach(rnc => {
+                    if (!emisorNames[rnc]) {
+                        fetchEmisorName(rnc);
+                    }
+                });
             } else if (response.data.success === false) {
                 setError(response.data.message || 'Error al obtener eCF recibidos');
             }
