@@ -12,6 +12,7 @@ import Certificados from '@/pages/Certificados';
 import Facturas from '@/pages/Facturas';
 import Usuarios from '@/pages/Usuarios';
 import Empresa from '@/pages/Empresa';
+import Configuracion from '@/pages/Configuracion';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
