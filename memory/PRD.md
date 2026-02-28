@@ -138,13 +138,14 @@
 - Cambio de Contraseña
 - Recepción eCF (listar/ver/búsqueda)
 - Comprobantes Fiscales (listar secuencias NCF)
+- e-CF Emitidos (reportes con filtros)
 - Modo oscuro/claro
 - Paquete de despliegue IIS generado
 
 ### Pendiente (MOCK o Placeholder)
 - Dashboard con datos MOCK (pendiente endpoints)
-- Módulo Reportes (placeholder)
 - XML real de eCF recibidos (actualmente simulado)
+- **NOTA**: El endpoint `/api/ecf/emitidos` no está disponible en el ambiente de prueba (ecf-test.api.verifact.com.do). Funcionará en producción.
 
 ## Archivos de Despliegue
 - `/app/frontend/verifact-iis-deploy.zip` - Paquete para IIS
