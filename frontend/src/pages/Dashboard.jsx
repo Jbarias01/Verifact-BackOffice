@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
     FileText, 
     FileCheck, 
@@ -16,7 +16,7 @@ import {
     XCircle,
     AlertTriangle,
     ArrowRight,
-    ExternalLink
+    BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -39,6 +39,19 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    Legend
+} from 'recharts';
 
 // API URL Configuration
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -55,24 +68,17 @@ const formatCurrency = (amount) => {
     }).format(amount || 0);
 };
 
-// Helper to format date
-const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    if (dateString.includes('-') && dateString.length === 10 && !dateString.includes('T')) {
-        const parts = dateString.split('-');
-        if (parts[0].length === 2) {
-            return `${parts[0]}/${parts[1]}/${parts[2]}`;
-        }
+// Helper to format short currency for charts
+const formatShortCurrency = (amount) => {
+    if (amount >= 1000000) {
+        return `RD$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+        return `RD$${(amount / 1000).toFixed(0)}K`;
     }
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-DO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
+    return `RD$${amount}`;
 };
 
-// Tipo eCF mapping
+// Tipo eCF mapping with full names
 const tipoEcfMap = {
     '31': 'Crédito Fiscal',
     '32': 'Consumo',
@@ -85,6 +91,20 @@ const tipoEcfMap = {
     '46': 'Exportación',
     '47': 'Pagos Exterior'
 };
+
+// Order for NCF types
+const ncfTypeOrder = ['31', '32', '33', '34', '41', '43', '44', '45', '46', '47'];
+
+// Colors for charts
+const CHART_COLORS = {
+    primary: '#3b82f6',
+    success: '#22c55e',
+    warning: '#f59e0b',
+    accent: '#8b5cf6',
+    muted: '#6b7280'
+};
+
+const PIE_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const Dashboard = () => {
     const { user, company, token } = useAuth();
@@ -173,8 +193,17 @@ const Dashboard = () => {
         fetchDashboardData();
     }, [fetchDashboardData]);
 
+    // Sort comprobantes by tipo
+    const sortedComprobantes = useMemo(() => {
+        return [...comprobantes].sort((a, b) => {
+            const indexA = ncfTypeOrder.indexOf(a.tipoeCF);
+            const indexB = ncfTypeOrder.indexOf(b.tipoeCF);
+            return indexA - indexB;
+        });
+    }, [comprobantes]);
+
     // Calculate statistics
-    const stats = {
+    const stats = useMemo(() => ({
         // eCF Emitidos
         totalEmitidos: ecfEmitidos.length,
         montoEmitidos: ecfEmitidos.reduce((sum, e) => sum + (e.monto || 0), 0),
@@ -192,7 +221,56 @@ const Dashboard = () => {
         // Certificados
         totalCertificados: certificados.length,
         certificadosActivos: certificados.filter(c => c.estado === 'Activo' || c.esActivo).length
-    };
+    }), [ecfEmitidos, ecfRecibidos, comprobantes, certificados]);
+
+    // Chart data - Emitidos vs Recibidos
+    const emitidosVsRecibidosData = useMemo(() => [
+        {
+            name: 'Emitidos',
+            cantidad: stats.totalEmitidos,
+            monto: stats.montoEmitidos,
+            fill: CHART_COLORS.primary
+        },
+        {
+            name: 'Recibidos',
+            cantidad: stats.totalRecibidos,
+            monto: stats.montoRecibidos,
+            fill: CHART_COLORS.success
+        }
+    ], [stats]);
+
+    // Chart data - eCF by tipo (emitidos)
+    const ecfByTipoData = useMemo(() => {
+        const tipoCount = {};
+        ecfEmitidos.forEach(ecf => {
+            const tipo = ecf.e_NCF?.substring(1, 3) || 'Otro';
+            tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
+        });
+        ecfRecibidos.forEach(ecf => {
+            const tipo = ecf.tipoECF || 'Otro';
+            tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
+        });
+        
+        return Object.entries(tipoCount).map(([tipo, count], index) => ({
+            name: tipoEcfMap[tipo] || `Tipo ${tipo}`,
+            value: count,
+            tipo: tipo
+        }));
+    }, [ecfEmitidos, ecfRecibidos]);
+
+    // Chart data - Comprobantes status
+    const comprobantesStatusData = useMemo(() => [
+        {
+            name: 'Habilitados',
+            value: stats.comprobantesHabilitados,
+            fill: CHART_COLORS.success
+        },
+        {
+            name: 'Deshabilitados',
+            value: stats.totalComprobantes - stats.comprobantesHabilitados,
+            fill: CHART_COLORS.muted
+        }
+    ], [stats]);
 
     // Get status badge
     const getStatusBadge = (estado) => {
@@ -232,6 +310,23 @@ const Dashboard = () => {
     };
 
     const certStatus = getCertificateStatus();
+
+    // Custom tooltip for charts
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-popover border rounded-lg shadow-lg p-3">
+                    <p className="font-medium text-foreground">{label || payload[0].name}</p>
+                    {payload.map((entry, index) => (
+                        <p key={index} className="text-sm text-muted-foreground">
+                            {entry.dataKey === 'monto' ? formatCurrency(entry.value) : `${entry.value} comprobante(s)`}
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -370,111 +465,141 @@ const Dashboard = () => {
                 </Card>
             </div>
 
-            {/* Quick Navigation & Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Resumen Financiero */}
-                <Card className="lg:col-span-2">
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Bar Chart - Emitidos vs Recibidos (Montos) */}
+                <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Resumen de Facturación</CardTitle>
-                        <CardDescription>Montos totales de comprobantes electrónicos</CardDescription>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-primary" />
+                            Comparación de Montos
+                        </CardTitle>
+                        <CardDescription>e-CF Emitidos vs Recibidos</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Send className="h-5 w-5 text-primary" />
-                                    <span className="text-sm font-medium text-muted-foreground">Total Emitido</span>
-                                </div>
-                                <p className="text-2xl font-bold text-foreground">
-                                    {formatCurrency(stats.montoEmitidos)}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {stats.totalEmitidos} comprobante(s)
-                                </p>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center h-[250px]">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             </div>
-                            <div className="p-4 rounded-lg bg-success/5 border border-success/10">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Inbox className="h-5 w-5 text-success" />
-                                    <span className="text-sm font-medium text-muted-foreground">Total Recibido</span>
-                                </div>
-                                <p className="text-2xl font-bold text-foreground">
-                                    {formatCurrency(stats.montoRecibidos)}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {stats.totalRecibidos} comprobante(s)
-                                </p>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={emitidosVsRecibidosData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                    <XAxis 
+                                        type="number" 
+                                        tickFormatter={formatShortCurrency}
+                                        className="text-xs"
+                                    />
+                                    <YAxis 
+                                        type="category" 
+                                        dataKey="name" 
+                                        width={80}
+                                        className="text-xs"
+                                    />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar 
+                                        dataKey="monto" 
+                                        radius={[0, 4, 4, 0]}
+                                    >
+                                        {emitidosVsRecibidosData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
+                        {/* Summary below chart */}
+                        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-primary">{formatCurrency(stats.montoEmitidos)}</p>
+                                <p className="text-xs text-muted-foreground">Total Emitido</p>
                             </div>
-                        </div>
-
-                        {/* Balance */}
-                        <div className="mt-4 p-4 rounded-lg bg-secondary/50">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-muted-foreground">Balance Neto</span>
-                                <span className={cn(
-                                    "text-xl font-bold",
-                                    stats.montoEmitidos - stats.montoRecibidos >= 0 ? "text-success" : "text-destructive"
-                                )}>
-                                    {formatCurrency(stats.montoEmitidos - stats.montoRecibidos)}
-                                </span>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-success">{formatCurrency(stats.montoRecibidos)}</p>
+                                <p className="text-xs text-muted-foreground">Total Recibido</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Accesos Rápidos */}
+                {/* Pie Chart - Tipos de eCF */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Accesos Rápidos</CardTitle>
-                        <CardDescription>Módulos principales</CardDescription>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Receipt className="h-5 w-5 text-accent" />
+                            Distribución por Tipo
+                        </CardTitle>
+                        <CardDescription>Comprobantes por tipo de e-CF</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-2">
-                        <Button 
-                            variant="outline" 
-                            className="w-full justify-between"
-                            onClick={() => navigate('/dashboard/facturas')}
-                        >
-                            <span className="flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                Facturas XML
-                            </span>
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            className="w-full justify-between"
-                            onClick={() => navigate('/dashboard/recepcion-ecf')}
-                        >
-                            <span className="flex items-center gap-2">
-                                <Inbox className="h-4 w-4" />
-                                Recepción eCF
-                            </span>
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            className="w-full justify-between"
-                            onClick={() => navigate('/dashboard/usuarios')}
-                        >
-                            <span className="flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                Usuarios
-                            </span>
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            className="w-full justify-between"
-                            onClick={() => navigate('/dashboard/empresa')}
-                        >
-                            <span className="flex items-center gap-2">
-                                <FileCheck className="h-4 w-4" />
-                                Mi Empresa
-                            </span>
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
+                    <CardContent>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center h-[250px]">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                        ) : ecfByTipoData.length === 0 ? (
+                            <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                                No hay datos disponibles
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={250}>
+                                <PieChart>
+                                    <Pie
+                                        data={ecfByTipoData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={90}
+                                        paddingAngle={2}
+                                        dataKey="value"
+                                        label={({ name, value }) => `${value}`}
+                                        labelLine={false}
+                                    >
+                                        {ecfByTipoData.map((entry, index) => (
+                                            <Cell 
+                                                key={`cell-${index}`} 
+                                                fill={PIE_COLORS[index % PIE_COLORS.length]} 
+                                            />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                    <Legend 
+                                        verticalAlign="bottom" 
+                                        height={36}
+                                        formatter={(value) => <span className="text-xs">{value}</span>}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Balance Card */}
+            <Card className="bg-gradient-to-r from-primary/5 to-success/5 border-primary/20">
+                <CardContent className="pt-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Balance Neto (Emitido - Recibido)</p>
+                            <p className={cn(
+                                "text-3xl font-bold mt-1",
+                                stats.montoEmitidos - stats.montoRecibidos >= 0 ? "text-success" : "text-destructive"
+                            )}>
+                                {formatCurrency(stats.montoEmitidos - stats.montoRecibidos)}
+                            </p>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="text-center px-4 py-2 rounded-lg bg-primary/10">
+                                <p className="text-lg font-bold text-primary">{stats.totalEmitidos}</p>
+                                <p className="text-xs text-muted-foreground">Emitidos</p>
+                            </div>
+                            <div className="text-center px-4 py-2 rounded-lg bg-success/10">
+                                <p className="text-lg font-bold text-success">{stats.totalRecibidos}</p>
+                                <p className="text-xs text-muted-foreground">Recibidos</p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Recent eCF Tables */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -589,12 +714,12 @@ const Dashboard = () => {
                 </Card>
             </div>
 
-            {/* Comprobantes NCF Status */}
+            {/* Comprobantes NCF Status - SORTED BY TYPE */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle className="text-lg">Estado de Comprobantes NCF</CardTitle>
-                        <CardDescription>Secuencias de comprobantes fiscales asignados por la DGII</CardDescription>
+                        <CardDescription>Secuencias de comprobantes fiscales asignados por la DGII (ordenados por tipo)</CardDescription>
                     </div>
                     <Button 
                         variant="ghost" 
@@ -610,20 +735,20 @@ const Dashboard = () => {
                         <div className="flex items-center justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         </div>
-                    ) : comprobantes.length === 0 ? (
+                    ) : sortedComprobantes.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground text-sm">
                             No hay comprobantes asignados
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            {comprobantes.map((comp) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
+                            {sortedComprobantes.map((comp) => (
                                 <div 
                                     key={comp.id}
                                     className={cn(
-                                        "p-3 rounded-lg border text-center transition-colors",
+                                        "p-3 rounded-lg border text-center transition-all hover:scale-105",
                                         comp.habilitado 
-                                            ? "bg-success/5 border-success/20" 
-                                            : "bg-muted/50 border-muted"
+                                            ? "bg-success/5 border-success/20 hover:bg-success/10" 
+                                            : "bg-muted/50 border-muted hover:bg-muted"
                                     )}
                                 >
                                     <p className={cn(
@@ -632,20 +757,13 @@ const Dashboard = () => {
                                     )}>
                                         {comp.tipoeCF}
                                     </p>
-                                    <p className="text-xs text-muted-foreground truncate" title={comp.descripcion}>
+                                    <p className="text-[10px] text-muted-foreground truncate" title={tipoEcfMap[comp.tipoeCF] || comp.descripcion}>
                                         {tipoEcfMap[comp.tipoeCF] || comp.descripcion}
                                     </p>
-                                    <Badge 
-                                        variant="outline" 
-                                        className={cn(
-                                            "mt-2 text-[10px]",
-                                            comp.habilitado 
-                                                ? "bg-success/10 text-success border-success/20" 
-                                                : "bg-muted text-muted-foreground"
-                                        )}
-                                    >
-                                        {comp.habilitado ? 'Habilitado' : 'Deshabilitado'}
-                                    </Badge>
+                                    <div className={cn(
+                                        "mt-2 w-2 h-2 rounded-full mx-auto",
+                                        comp.habilitado ? "bg-success" : "bg-muted-foreground"
+                                    )} />
                                 </div>
                             ))}
                         </div>
