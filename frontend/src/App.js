@@ -52,7 +52,7 @@ function App() {
                             <Route path="certificados" element={<Certificados />} />
                             <Route path="usuarios" element={<Usuarios />} />
                             <Route path="reportes" element={<PlaceholderPage title="Reportes y Análisis" />} />
-                            <Route path="empresa" element={<PlaceholderPage title="Datos de la Empresa" />} />
+                            <Route path="empresa" element={<Empresa />} />
                             <Route path="configuracion" element={<PlaceholderPage title="Configuración" />} />
                         </Route>
                         
