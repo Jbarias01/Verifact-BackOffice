@@ -30,7 +30,7 @@ const menuItems = [
         title: 'Facturación',
         items: [
             { name: 'Facturas', icon: FileText, path: '/dashboard/facturas' },
-            { name: 'Recepción eCF', icon: Receipt, path: '/dashboard/recepcion-ecf' },
+            { name: 'Recepción eCF', icon: Inbox, path: '/dashboard/recepcion-ecf' },
             { name: 'Comprobantes', icon: Receipt, path: '/dashboard/comprobantes' },
         ]
     },
