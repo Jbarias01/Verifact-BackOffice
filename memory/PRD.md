@@ -191,4 +191,4 @@
 
 ## Última Actualización
 - Fecha: 28 de febrero de 2026
-- Tarea completada: Dashboard con gráficos (Barras y Pie) y comprobantes NCF ordenados por tipo
+- Tarea completada: Dashboard con gráfico Hero de Ventas (grande, orientado a ventas con desglose ITBIS y Top Clientes)
