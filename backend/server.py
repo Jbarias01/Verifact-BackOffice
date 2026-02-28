@@ -984,6 +984,48 @@ async def proxy_get_ecf_recibidos():
         logger.error(f"Error getting received eCF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+# =============================================
+# RNC CONSULTA API PROXY ENDPOINT
+# =============================================
+
+@api_router.get("/rnc/consultar/{rnc}")
+async def proxy_consultar_rnc(rnc: str, authorization: str = Header(...)):
+    """
+    Proxy endpoint to get RNC information from Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/rnc/consultar-rnc/{rnc}",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            elif response.status_code == 404:
+                return {
+                    "name": "No encontrado",
+                    "status": "DESCONOCIDO",
+                    "createdAt": None
+                }
+            else:
+                return {
+                    "name": "Error al consultar",
+                    "status": "ERROR",
+                    "createdAt": None
+                }
+                    
+    except Exception as e:
+        logger.error(f"Error consulting RNC: {str(e)}")
+        return {
+            "name": "Error",
+            "status": "ERROR",
+            "createdAt": None
+        }
+
 # Include the router in the main app
 app.include_router(api_router)
 
