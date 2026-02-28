@@ -152,10 +152,9 @@
 - `/app/frontend/DEPLOY_IIS.md` - Instrucciones de despliegue
 
 ## Tareas Futuras (Backlog)
-1. **P1**: Implementar módulo Reportes
-2. **P1**: Acciones XML reales en Recepción eCF (obtener XML del servidor)
-3. **P2**: Mejorar sidebar móvil (overlay con Sheet)
-4. **P2**: Conectar dashboard a datos reales
+1. **P1**: Acciones XML reales en Recepción eCF (obtener XML del servidor)
+2. **P2**: Mejorar sidebar móvil (overlay con Sheet)
+3. **P2**: Conectar dashboard a datos reales
 
 ## Credenciales de Prueba
 - Email: admin@axcom.com
