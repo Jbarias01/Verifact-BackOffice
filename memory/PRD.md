@@ -127,6 +127,7 @@
 | `/api/fe/recepcion/ecf/recibidos` | GET | eCF recibidos |
 | `/api/rnc/consultar/{rnc}` | GET | Consultar RNC |
 | `/api/comprobantes/cliente` | GET | Secuencias NCF |
+| `/api/ecf/emitidos` | GET | e-CF emitidos (con filtros) |
 
 ## Estado Actual
 - Login/Logout conectado al Backend REAL de Verifact
