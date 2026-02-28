@@ -140,50 +140,62 @@ const Dashboard = () => {
         try {
             // Fetch eCF Emitidos
             try {
-                const emitidosRes = await axios.get(`${API_BASE_URL}/ecf/emitidos`, {
+                const url = USE_PROXY 
+                    ? `${API_BASE_URL}/ecf/emitidos`
+                    : `${API_BASE_URL}/api/ecf/emitidos`;
+                const emitidosRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (emitidosRes.data?.facturas) {
                     setEcfEmitidos(emitidosRes.data.facturas);
                 }
             } catch (e) {
-                console.log('eCF Emitidos endpoint not available');
+                console.log('eCF Emitidos endpoint not available', e);
             }
 
             // Fetch eCF Recibidos
             try {
-                const recibidosRes = await axios.get(`${API_BASE_URL}/fe/recepcion/ecf/recibidos/filtros`, {
+                const url = USE_PROXY 
+                    ? `${API_BASE_URL}/fe/recepcion/ecf/recibidos/filtros`
+                    : `${API_BASE_URL}/fe/recepcion/api/ecf/recibidos`;
+                const recibidosRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (recibidosRes.data?.ecfRecibidos) {
                     setEcfRecibidos(recibidosRes.data.ecfRecibidos);
                 }
             } catch (e) {
-                console.log('eCF Recibidos endpoint not available');
+                console.log('eCF Recibidos endpoint not available', e);
             }
 
             // Fetch Comprobantes
             try {
-                const comprobantesRes = await axios.get(`${API_BASE_URL}/comprobantes/cliente`, {
+                const url = USE_PROXY 
+                    ? `${API_BASE_URL}/comprobantes/cliente`
+                    : `${API_BASE_URL}/api/comprobantes/cliente`;
+                const comprobantesRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (Array.isArray(comprobantesRes.data)) {
                     setComprobantes(comprobantesRes.data);
                 }
             } catch (e) {
-                console.log('Comprobantes endpoint not available');
+                console.log('Comprobantes endpoint not available', e);
             }
 
             // Fetch Certificados
             try {
-                const certificadosRes = await axios.get(`${API_BASE_URL}/certificado/listado`, {
+                const url = USE_PROXY 
+                    ? `${API_BASE_URL}/certificado/listado`
+                    : `${API_BASE_URL}/api/certificado/listado`;
+                const certificadosRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (Array.isArray(certificadosRes.data)) {
                     setCertificados(certificadosRes.data);
                 }
             } catch (e) {
-                console.log('Certificados endpoint not available');
+                console.log('Certificados endpoint not available', e);
             }
 
         } catch (err) {
