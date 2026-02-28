@@ -69,7 +69,7 @@
 - **Estado**: Habilitado/Deshabilitado
 - **Secuencia actual** y rango asignado
 
-### 10. e-CF Emitidos (Reportes) - NUEVO
+### 10. e-CF Emitidos (Reportes)
 - **Listar e-CF emitidos** por la empresa
 - **Filtros disponibles:**
   - Fecha Desde / Hasta
@@ -81,7 +81,19 @@
 - **Descargar XML** original firmado
 - **Estadísticas**: Total emitidos, Aceptados, En Cola, Monto Total
 
-### 11. Navegación y Diseño
+### 11. e-CF Recibidos (Reportes) - NUEVO
+- **Listar e-CF recibidos** de otros emisores con filtros avanzados
+- **Filtros disponibles:**
+  - Fecha Desde / Hasta
+  - Estado (Recibido, Procesado, Pendiente, Rechazado)
+  - RNC Emisor
+  - RNC Receptor
+- **Búsqueda local** por eNCF, RNC emisor, archivo
+- **Ver detalle** completo del e-CF
+- **Información mostrada:** Archivo XML, Ruta del archivo, fechas
+- **Estadísticas**: Total recibidos, Estado Recibido, Monto Total
+
+### 12. Navegación y Diseño
 - **Sidebar Colapsable** con secciones organizadas:
   - Principal: Dashboard
   - Facturación: Facturas, Recepción eCF, Comprobantes
