@@ -13,14 +13,20 @@
 - Formato RNC validado: XXX-XXXXX-X
 
 ### 2. Dashboard Principal (ACTUALIZADO - DATOS REALES CON GRÁFICOS)
+- **Gráfico Hero de Ventas (NUEVO - Grande y destacado):**
+  - Total Ventas y cantidad de comprobantes en KPIs grandes
+  - Gráfico combinado (barras + línea) de ventas por tipo de comprobante
+  - Desglose: Subtotal, ITBIS (18%), Total Facturado
+  - Top 3 Clientes por monto
+  - Botón "Ver detalle de ventas"
 - **Estadísticas principales con datos del API:**
   - e-CF Emitidos (cantidad y monto total)
   - e-CF Recibidos (cantidad y monto total)
   - Tipos NCF (total y habilitados)
   - Certificados (estado del certificado digital)
-- **Gráficos interactivos:**
+- **Gráficos adicionales:**
   - Gráfico de Barras: Comparación de montos Emitidos vs Recibidos
-  - Gráfico de Pie: Distribución por tipo de e-CF (31, 32, etc.)
+  - Gráfico de Pie: Distribución por tipo de e-CF
 - **Balance Neto:** Diferencia entre emitido y recibido
 - **Últimos e-CF Emitidos:** Tabla con los 5 más recientes
 - **Últimos e-CF Recibidos:** Tabla con los 5 más recientes
