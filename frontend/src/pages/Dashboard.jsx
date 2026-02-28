@@ -422,6 +422,179 @@ const Dashboard = () => {
 
             {/* Main Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            {/* HERO CHART - Resumen de Ventas */}
+            <Card className="col-span-full bg-gradient-to-br from-primary/5 via-background to-success/5 border-primary/20">
+                <CardHeader className="pb-2">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-2xl flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                    <TrendingUp className="h-6 w-6 text-primary" />
+                                </div>
+                                Resumen de Ventas
+                            </CardTitle>
+                            <CardDescription className="mt-1">Facturación electrónica emitida</CardDescription>
+                        </div>
+                        <div className="flex flex-wrap gap-4">
+                            <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Total Ventas</p>
+                                <p className="text-3xl font-bold text-primary">
+                                    {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : formatCurrency(stats.montoEmitidos)}
+                                </p>
+                            </div>
+                            <div className="text-right border-l pl-4">
+                                <p className="text-xs text-muted-foreground">Comprobantes</p>
+                                <p className="text-3xl font-bold text-foreground">{stats.totalEmitidos}</p>
+                            </div>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-[300px]">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Gráfico Principal de Ventas por Tipo */}
+                            <div className="lg:col-span-2">
+                                <p className="text-sm font-medium text-muted-foreground mb-4">Ventas por Tipo de Comprobante</p>
+                                {ventasPorTipoData.length === 0 ? (
+                                    <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                                        No hay datos de ventas disponibles
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height={250}>
+                                        <ComposedChart data={ventasPorTipoData}>
+                                            <defs>
+                                                <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                                            <XAxis 
+                                                dataKey="shortName" 
+                                                tick={{ fontSize: 12 }}
+                                                className="text-xs"
+                                            />
+                                            <YAxis 
+                                                yAxisId="left"
+                                                tickFormatter={formatShortCurrency}
+                                                tick={{ fontSize: 11 }}
+                                                className="text-xs"
+                                            />
+                                            <YAxis 
+                                                yAxisId="right"
+                                                orientation="right"
+                                                tick={{ fontSize: 11 }}
+                                                className="text-xs"
+                                            />
+                                            <Tooltip 
+                                                content={({ active, payload, label }) => {
+                                                    if (active && payload && payload.length) {
+                                                        const data = payload[0].payload;
+                                                        return (
+                                                            <div className="bg-popover border rounded-lg shadow-lg p-3">
+                                                                <p className="font-medium text-foreground">{data.name}</p>
+                                                                <p className="text-sm text-primary">Monto: {formatCurrency(data.monto)}</p>
+                                                                <p className="text-sm text-muted-foreground">Cantidad: {data.cantidad}</p>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
+                                            />
+                                            <Bar 
+                                                yAxisId="left"
+                                                dataKey="monto" 
+                                                fill="url(#colorVentas)"
+                                                radius={[4, 4, 0, 0]}
+                                                name="Monto"
+                                            />
+                                            <Line 
+                                                yAxisId="right"
+                                                type="monotone" 
+                                                dataKey="cantidad" 
+                                                stroke="#22c55e" 
+                                                strokeWidth={2}
+                                                dot={{ fill: '#22c55e', strokeWidth: 2 }}
+                                                name="Cantidad"
+                                            />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                )}
+                            </div>
+
+                            {/* Panel de Desglose */}
+                            <div className="space-y-4">
+                                <p className="text-sm font-medium text-muted-foreground">Desglose de Facturación</p>
+                                
+                                {/* Subtotal */}
+                                <div className="p-4 rounded-lg bg-secondary/50 border">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Subtotal (sin ITBIS)</span>
+                                        <span className="font-semibold">{formatCurrency(ventasDesglose.subtotal)}</span>
+                                    </div>
+                                </div>
+                                
+                                {/* ITBIS */}
+                                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-warning">ITBIS (18%)</span>
+                                        <span className="font-semibold text-warning">{formatCurrency(ventasDesglose.itbis)}</span>
+                                    </div>
+                                </div>
+                                
+                                {/* Total */}
+                                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium text-primary">Total Facturado</span>
+                                        <span className="text-xl font-bold text-primary">{formatCurrency(ventasDesglose.total)}</span>
+                                    </div>
+                                </div>
+
+                                {/* Top Clientes */}
+                                {ventasPorClienteData.length > 0 && (
+                                    <div className="mt-4">
+                                        <p className="text-sm font-medium text-muted-foreground mb-2">Top Clientes</p>
+                                        <div className="space-y-2">
+                                            {ventasPorClienteData.slice(0, 3).map((cliente, index) => (
+                                                <div 
+                                                    key={index}
+                                                    className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
+                                                >
+                                                    <span className="text-xs truncate flex-1 mr-2" title={cliente.fullName}>
+                                                        {cliente.name}
+                                                    </span>
+                                                    <span className="text-xs font-medium text-primary whitespace-nowrap">
+                                                        {formatCurrency(cliente.monto)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CTA */}
+                                <Button 
+                                    variant="outline" 
+                                    className="w-full mt-2"
+                                    onClick={() => navigate('/dashboard/reportes')}
+                                >
+                                    Ver detalle de ventas
+                                    <ArrowRight className="h-4 w-4 ml-2" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            </div>
+
+            {/* Stats Cards Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* eCF Emitidos */}
                 <Card 
                     className="cursor-pointer hover:shadow-lg transition-shadow"
