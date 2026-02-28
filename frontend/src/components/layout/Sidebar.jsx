@@ -14,7 +14,8 @@ import {
     FileClock,
     BarChart3,
     HelpCircle,
-    Shield
+    Shield,
+    UserCog
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
