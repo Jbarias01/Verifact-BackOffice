@@ -1,58 +1,68 @@
 <analysis>**original_problem_statement:**
-The user wants to develop a BackOffice for an electronic invoicing project named Verifact. The initial request was to design and build a frontend prototype for a Login page, a company registration page, and a dashboard. Throughout the conversation, the user provided several backend API endpoints to be integrated for features like login, certificate management, and invoice management. The user also specified that the final output should be a monolithic application deployable on an IIS server.
+The user wants to develop a BackOffice for an electronic invoicing project named Verifact. The initial request was to design and build a frontend prototype for a Login page, a company registration page, and a dashboard. The scope has since expanded to include full CRUD modules for managing digital certificates, invoices (including XML uploads), users, company information, eCF reception, and NCF sequences. The final output should be a monolithic application deployable on an IIS server.
 
 **PRODUCT REQUIREMENTS:**
-1.  **Authentication:** Login and Registration pages.
-2.  **Dashboard:** Main view with key metrics and navigation.
+1.  **Authentication:** Login (with auto-refreshing JWT), Registration, and Change Password pages.
+2.  **Dashboard:** Main view with key metrics and navigation (currently with mock data).
 3.  **Certificate Management:** A page to list and upload digital certificates ( files).
-4.  **Invoice Management:** A page to list, filter (by date, status), view details of, and upload electronic invoices ( files).
-5.  **Deployment:** The final frontend application should be a static build compatible with IIS.
-6.  **UI/UX:** A professional, corporate design with a blue and green color scheme, supporting both light and dark modes.
+4.  **Invoice Management:** A page to list, filter, view details of, and upload electronic invoices ( files). Includes a link to query invoices on the DGII website.
+5.  **User Management:** A full CRUD module to manage company users (list, create, edit, view).
+6.  **Company Management:** A page displaying the logged-in user's company information.
+7.  **eCF Reception:** A module to display received electronic receipts, including fetching emitter details from an RNC lookup endpoint.
+8.  **NCF Management:** A module to display the company's assigned NCF (Número de Comprobante Fiscal) sequences.
+9.  **Deployment:** The final frontend application should be a static build compatible with IIS.
+10. **UI/UX:** A professional, corporate design with a blue and green color scheme, supporting both light and dark modes.
 
 **User's preferred language**: Spanish. The next agent MUST respond in Spanish.
 
 **what currently exists?**
-A comprehensive React-based frontend application has been developed. It includes pages for Login, Registration, Dashboard, Certificate Management, and Invoice Management. The UI is built with Tailwind CSS and Shadcn components, following a custom design system. To overcome CORS and SSL issues during development, a FastAPI proxy backend was created to securely communicate with the user's provided API endpoints. The application is fully functional within the preview environment using this proxy. A build process is in place to generate a static version of the app, complete with an IIS  file, ready for production deployment.
+A comprehensive React-based frontend application has been developed with pages for Login, Registration, Dashboard, Certificates, Invoices, Users, Company Info, Settings (Change Password), eCF Reception, and NCFs (Comprobantes). The UI uses Tailwind CSS and Shadcn. A FastAPI proxy backend () has been implemented to securely route all API calls to the user's proprietary  backend, solving CORS/SSL issues during development. JWT-based authentication with an automatic token refresh mechanism is fully functional. A build process exists to generate a static version of the app () with an IIS  file.
 
 **Last working item**:
-*   **Last item agent was working:** The agent started implementing the functionality to upload electronic invoices in XML format on the Gestión de Facturas page.
+*   **Last item agent was working:** The agent started creating the Comprobantes module, which is intended to display the NCF (Números de Comprobante Fiscal) sequences for the client. The agent created the backend proxy endpoint, the frontend page file (), and added the navigation links.
 *   **Status:** IN PROGRESS
 *   **Agent Testing Done:** N
-*   **Which testing method agent to use?** Frontend testing agent. The test should cover opening the upload modal, selecting an XML file, submitting the form, and verifying that the invoice list is updated.
+*   **Which testing method agent to use?** Frontend testing agent. The test should verify that the page loads, fetches the list of NCFs from the API, and displays them correctly in a table.
 *   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-There are no pending bugs or issues. The work in progress is a feature implementation.
+There are no known bugs.
 
 **In progress Task List**:
-*   **Task 1:** Implement XML Invoice Upload (Priority: P0)
-    *   **Where to resume:** The agent was about to add a new proxy endpoint to  for handling the XML file upload.
-        1.  Add a new route  to  to handle the  request and forward it to the user's endpoint ().
-        2.  In , add a Subir Factura button that opens a modal dialog.
-        3.  Create the modal component containing a file input restricted to  files and a submit button.
-        4.  Implement the logic to call the new backend proxy endpoint on form submission.
-        5.  Upon a successful response, trigger a refresh of the invoice list to display the newly uploaded invoice.
-    *   **What will be achieved with this?** Users will be able to upload new invoices directly from the UI.
+*   **Task 1:** Complete Comprobantes Module UI (Priority: P0)
+    *   **Where to resume:** The file  is currently a placeholder. The agent needs to implement the UI to fetch and display data.
+        1.  In , use  and  to fetch the list of NCFs from the  endpoint.
+        2.  Use Shadcn components (, ) to render the fetched data, showing columns like , , , , and .
+        3.  Add a header and summary statistics (e.g., total NCF types, number of enabled sequences).
+    *   **What will be achieved with this?** A functional page where users can view the status and details of their assigned NCF sequences.
     *   **Status:** IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?** Both.
+    *   **Should Test frontend/backend/both after fix?** Frontend.
     *   **Blocked on something:** No.
 
 **Upcoming and Future Tasks**
 *   **Future Tasks:**
-    *   **Improve Mobile Sidebar (P2):** In , the current sidebar pushes content on mobile. It should be updated to have an overlay behavior for a better mobile user experience.
+    *   **Improve Mobile Sidebar (P2):** In , the current sidebar pushes content on mobile. It should be updated to have an overlay behavior, potentially using Shadcn's  component.
+    *   **Connect Dashboard to Real Data (P2):** The main dashboard statistics and charts still use mock data and need to be connected to live API endpoints.
+    *   **Implement Reportes Module (P1):** A Reportes section was added to the menu, but the page is a placeholder. This feature needs to be designed and implemented once API endpoints are provided.
+    *   **Implement XML Actions in Recepción eCF (P1):** The Previsualizar XML and Descargar XML actions in the  page are placeholders and need to be implemented.
 
 **Completed work in this session**
-*   **Full Application Scaffolding:** Created a complete frontend application with Login, Registration, Dashboard, Certificate, and Invoice pages.
-*   **Design System:** Implemented a custom design system in  with support for light/dark modes.
-*   **Proxy Backend:** Built a FastAPI server () to proxy API requests, solving CORS and SSL issues.
-*   **Login/Logout Integration:** Connected the UI to the real backend endpoints for user authentication.
-*   **Certificate Module:** Implemented UI and backend integration for listing and uploading digital certificates.
-*   **Invoice Module:** Implemented UI and backend integration for listing, filtering, and viewing invoice details. This included handling a date format mismatch between the UI (DD-MM-YYYY) and the API (MM-DD-YYYY).
-*   **UI/UX Refinements:**
-    *   Updated invoice statuses to align with DGII specifications.
-    *   Made the copyright year dynamic in the footer.
-    *   Updated the page title to Verifact - Facturación Electrónica Segura.
-*   **IIS Deployment Package:** Created a build process that generates a  file with the static frontend and a  file.
+- **XML Invoice Upload:** Fully implemented and tested the invoice upload feature.
+- **Refresh Token Mechanism:** Integrated automatic JWT refresh to prevent session expiry.
+- **User Management Module:** Built a complete CRUD interface for managing users.
+- **Company & Settings Modules:** Created pages for viewing company details () and changing the user's password ().
+- **Recepción eCF Module:** Created a page to view received invoices, including a feature to dynamically fetch the emitter's name via an RNC lookup.
+- **Sidebar Reorganization:** Restructured the navigation menu as per user request.
+- **Numerous UI/UX Fixes:**
+    - Aligned filter buttons on the Invoices page.
+    - Changed  invoice status to En Cola and updated all related UI.
+    - Disabled the DGII query link for invoices not yet processed.
+    - Updated the DGII URL to the correct testing environment.
+- **Backend Enhancements:**
+    - Added over 10 new proxy endpoints to .
+    - Improved error handling to accept  as a success status and parse specific error messages from  responses.
+    - Made the company registration endpoint public (no token required) after user clarification.
+- **Removed Emergent Badge:** Hid the Made with Emergent badge via CSS.
 
 **Earlier issues found/mentioned but not fixed**
 *   **Issue 1:** Mobile sidebar behavior needs improvement.
@@ -70,65 +80,73 @@ There are no pending bugs or issues. The work in progress is a feature implement
 **Key Technical Concepts**
 *   **Frontend:** React, Tailwind CSS, Shadcn/UI, Recharts, date-fns.
 *   **Backend:** Python (FastAPI) acting as a proxy.
-*   **Architecture:** A Single Page Application (SPA) that communicates with a proxy backend during development. The final output is a static build for a monolithic deployment.
-*   **Authentication:** JWT-based. The token is stored in  and sent with each authenticated request in the  header.
+*   **Architecture:** A Single Page Application (SPA) communicating with a proxy backend.
+*   **Authentication:** JWT-based with an automatic background refresh mechanism implemented in .
 
 **key DB schema**
-*   Not applicable. The application communicates with a pre-existing API and does not manage a database.
+*   Not applicable. The application is a frontend for a pre-existing API.
 
 **changes in tech stack**
-*   A FastAPI backend was introduced to serve as a proxy, which was a necessary addition to handle CORS and SSL complexities during development.
+*   None.
 
 **All files of reference**
-*   : The core of the proxy backend, forwarding requests to the Verifact API.
-*   : Manages all authentication logic, including login, logout, and token storage.
-*   : The invoice management page, containing logic for fetching, filtering, and displaying invoices.
-*   : The certificate management page.
-*   : Configuration file required for deploying the static site on IIS.
-*   : Deployment instructions for the user.
+*   : The core proxy server, heavily modified with new endpoints.
+*   : Manages authentication, including the new token refresh logic.
+*   : The page for the current in-progress task.
+*   : The heavily modified invoice management page.
+*   : The user management page.
+*   : The eCF reception page.
+*   : Contains the updated menu structure.
+*   : Contains all the new routes for the created pages.
 
 **key api endpoints**
-All endpoints are proxied through the FastAPI backend.
-*   : User login.
-*   : User logout.
-*   : Get list of certificates.
-*   : Upload a new certificate.
-*   : Get list of invoices with filters.
-*    : Upload a new invoice XML.
+The following new endpoints were integrated via the proxy:
+*   
+*   
+*   
+*    (and by ID for GET/PUT)
+*   
+*   
+*   
+*   
+*   
 
 **Critical Info for New Agent**
-*   **Proxy is Mandatory for Preview:** The application will not work in the preview environment without the FastAPI proxy backend (). All new API integrations must be routed through this proxy.
-*   **Production vs. Preview:** The final IIS build is configured to call the Verifact API directly. The proxy is a development-time solution. Remind the user that for the production build to work, CORS must be enabled on their  backend.
-*   **Invoice Date Format:** The API for fetching invoices requires the date format . The UI displays . This conversion is handled in  and must be preserved.
-*   **Authentication Flow:** The JWT token is stored in  after login and must be included in the  header for all authenticated requests.  manages this.
+*   **Proxy is Mandatory:** All API calls must continue to be routed through .
+*   **API Endpoint Availability:** Some endpoints provided by the user (e.g., for user management, NCFs) returned a  from the Verifact test API. The agent has built the frontend assuming these endpoints will be available in production. Do not treat a 404 on these new modules as a frontend bug; it is likely an environment issue.
+*   **Auth Flow:** The user confirmed that a previous  error was a temporary backend issue on their side and is now resolved. The agent should be aware that authentication issues may originate from the user's backend.
+*   **Status Codes:** The backend proxy was updated to accept both  and  as success codes for resource creation/update operations.
+*   **Error Messages:** The proxy now extracts the  field from  API responses to display more specific validation messages to the user.
 
 **documents and test reports created in this job**
-*   
-*   
-*   
+*    (updated multiple times)
 *   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** Implement XML invoice upload. (IN PROGRESS)
-2.  **Request:** Make copyright year dynamic. (Completed)
-3.  **Request:** Integrate logout endpoint. (Completed)
-4.  **Request:** Update invoice statuses per DGII and show full client name. (Completed)
-5.  **Feedback:** Invoice for today is not loading. (Completed - was a date format issue)
-6.  **Request:** Default date filters to today and use  format. (Completed)
-7.  **Request:** Integrate invoice fetching endpoint. (Completed)
-8.  **Request:** Change HTML page title. (Completed)
-9.  **Request:** The app should be a monolithic build for IIS. (Completed)
-10. **Request:** Implement certificate management module. (Completed)
+1.  **Request:** Add Comprobantes module to display NCF sequences. (IN PROGRESS)
+2.  **Request:** In Recepción eCF, add a column for the emitter's company name by looking up their RNC. (Completed)
+3.  **Request:** Create the Recepción eCF module to list received e-invoices. (Completed)
+4.  **Request:** Add a Configuración page for the logged-in user to change their password. (Completed)
+5.  **Request:** Reorganize the sidebar menu into new categories. (Completed)
+6.  **Request:** Create an Empresa page to display company information. (Completed)
+7.  **Feedback:** For 400 errors (like a duplicate email), show the specific error message from the API. (Completed)
+8.  **Feedback:** The user creation endpoint returns a  status, which should be handled as a success. (Completed)
+9.  **Request:** Create a full CRUD module for Usuarios. (Completed)
+10. **Feedback:** The  issue was a backend problem and is now fixed. Also, clarified that the Register Company endpoint is public (no token needed). (Completed)
 
 **Project Health Check:**
 *   **Broken:** None.
-*   **Mocked:** The main dashboard statistics and charts still use mock data. All other implemented features (Login, Certificates, Invoices) are connected to the live backend.
+*   **Mocked:** The main Dashboard statistics and charts are still using mock data.
+*   **Partially Implemented:**
+    *   The Comprobantes page needs its UI to be built.
+    *   The Reportes menu item leads to a placeholder page.
+    *   Actions in Recepción eCF (Preview/Download XML) are not implemented.
 
 **3rd Party Integrations**
-*   **Verifact API ():** The user's proprietary backend for electronic invoicing. Requires credentials provided by the user for authentication.
+*   **Verifact API ():** The user's proprietary backend for electronic invoicing.
 
 **Testing status**
-*   **Testing agent used after significant changes:** YES
+*   **Testing agent used after significant changes:** YES (for the invoice upload feature).
 *   **Troubleshoot agent used after agent stuck in loop:** NO
 *   **Test files created:** None
 *   **Known regressions:** None
@@ -138,4 +156,4 @@ All endpoints are proxied through the FastAPI backend.
 *   **Password:** 
 
 **What agent forgot to execute**
-*   The agent consciously deferred improving the mobile sidebar's overlay behavior to prioritize core feature requests. All other user requests were addressed or are in progress.</analysis>
+*   The agent has not forgotten any direct requests. The mobile sidebar improvement was consciously deferred as a lower-priority future task.</analysis>
