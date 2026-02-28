@@ -50,7 +50,11 @@ import {
     PieChart,
     Pie,
     Cell,
-    Legend
+    Legend,
+    AreaChart,
+    Area,
+    ComposedChart,
+    Line
 } from 'recharts';
 
 // API URL Configuration
