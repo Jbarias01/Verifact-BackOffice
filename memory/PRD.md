@@ -152,6 +152,7 @@
 - Recepción eCF (listar/ver/búsqueda)
 - Comprobantes Fiscales (listar secuencias NCF)
 - e-CF Emitidos (reportes con filtros)
+- e-CF Recibidos (reportes con filtros avanzados)
 - Modo oscuro/claro
 - Paquete de despliegue IIS generado
 
