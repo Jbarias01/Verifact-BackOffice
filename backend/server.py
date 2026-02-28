@@ -582,6 +582,247 @@ async def proxy_get_facturas(
         logger.error(f"Error getting invoices: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+# =============================================
+# USUARIOS API PROXY ENDPOINTS
+# =============================================
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+    nombre: str
+    rol: str
+
+class UpdateUserRequest(BaseModel):
+    email: str
+    password: Optional[str] = None
+    nombre: str
+    rol: str
+    esActivo: bool = True
+
+@api_router.get("/usuarios")
+async def proxy_get_usuarios(authorization: str = Header(...)):
+    """
+    Proxy endpoint to get all users from Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/usuarios",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting users: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.get("/usuarios/{user_id}")
+async def proxy_get_usuario(user_id: str, authorization: str = Header(...)):
+    """
+    Proxy endpoint to get a specific user from Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/usuarios/{user_id}",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Usuario no encontrado")
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.post("/usuarios")
+async def proxy_create_usuario(user_data: CreateUserRequest, authorization: str = Header(...)):
+    """
+    Proxy endpoint to create a new user in Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/usuarios",
+                json={
+                    "email": user_data.email,
+                    "password": user_data.password,
+                    "nombre": user_data.nombre,
+                    "rol": user_data.rol
+                },
+                headers={
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message") or error_data.get("title") or "Datos inválidos"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": "Datos de usuario inválidos"
+                    }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.put("/usuarios/{user_id}")
+async def proxy_update_usuario(user_id: str, user_data: UpdateUserRequest, authorization: str = Header(...)):
+    """
+    Proxy endpoint to update a user in Verifact API.
+    """
+    try:
+        update_data = {
+            "email": user_data.email,
+            "nombre": user_data.nombre,
+            "rol": user_data.rol,
+            "esActivo": user_data.esActivo
+        }
+        
+        # Only include password if provided
+        if user_data.password:
+            update_data["password"] = user_data.password
+        
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.put(
+                f"{VERIFACT_API_URL}/api/usuarios/{user_id}",
+                json=update_data,
+                headers={
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Usuario no encontrado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message") or error_data.get("title") or "Datos inválidos"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": "Datos de usuario inválidos"
+                    }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("message", f"Error: {response.status_code}")
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
