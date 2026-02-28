@@ -940,6 +940,50 @@ async def proxy_change_password(user_id: str, password_data: ChangePasswordReque
         logger.error(f"Error changing password: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+# =============================================
+# RECEPCIÓN eCF API PROXY ENDPOINTS
+# =============================================
+
+@api_router.get("/fe/recepcion/ecf/recibidos")
+async def proxy_get_ecf_recibidos():
+    """
+    Proxy endpoint to get received eCF documents.
+    This endpoint does not require authentication.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/fe/recepcion/api/ecf/recibidos/raw",
+                headers={
+                    "Accept": "text/plain"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except Exception as e:
+        logger.error(f"Error getting received eCF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
