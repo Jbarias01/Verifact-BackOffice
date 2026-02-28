@@ -466,12 +466,12 @@ const EcfEmitidos = () => {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="estado">Estado</Label>
-                            <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+                            <Select value={estadoFilter} onValueChange={(val) => setEstadoFilter(val === 'all' ? '' : val)}>
                                 <SelectTrigger id="estado" data-testid="filter-estado">
                                     <SelectValue placeholder="Todos" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">Todos</SelectItem>
+                                    <SelectItem value="all">Todos</SelectItem>
                                     <SelectItem value="Aceptado">Aceptado</SelectItem>
                                     <SelectItem value="AceptadoCondicional">Aceptado Condicional</SelectItem>
                                     <SelectItem value="EnProceso">En Proceso</SelectItem>
