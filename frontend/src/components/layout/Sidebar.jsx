@@ -26,16 +26,19 @@ const menuItems = [
         title: 'Principal',
         items: [
             { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-            { name: 'Facturas', icon: FileText, path: '/dashboard/facturas' },
-            { name: 'Clientes', icon: Users, path: '/dashboard/clientes' },
         ]
     },
     {
         title: 'Facturación',
         items: [
-            { name: 'Emitidas', icon: FileCheck, path: '/dashboard/emitidas' },
-            { name: 'Pendientes', icon: FileClock, path: '/dashboard/pendientes' },
+            { name: 'Facturas', icon: FileText, path: '/dashboard/facturas' },
             { name: 'Comprobantes', icon: Receipt, path: '/dashboard/comprobantes' },
+        ]
+    },
+    {
+        title: 'Reportes',
+        items: [
+            { name: 'Reportes', icon: BarChart3, path: '/dashboard/reportes' },
         ]
     },
     {
@@ -43,7 +46,6 @@ const menuItems = [
         items: [
             { name: 'Certificados', icon: Shield, path: '/dashboard/certificados' },
             { name: 'Usuarios', icon: UserCog, path: '/dashboard/usuarios' },
-            { name: 'Reportes', icon: BarChart3, path: '/dashboard/reportes' },
             { name: 'Empresa', icon: Building2, path: '/dashboard/empresa' },
             { name: 'Configuración', icon: Settings, path: '/dashboard/configuracion' },
         ]
