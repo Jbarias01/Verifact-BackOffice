@@ -276,6 +276,71 @@ const Dashboard = () => {
         }
     ], [stats]);
 
+    // Chart data - Ventas por tipo de comprobante (solo emitidos = ventas)
+    const ventasPorTipoData = useMemo(() => {
+        const tipoData = {};
+        
+        // Agrupar ventas (emitidos) por tipo
+        ecfEmitidos.forEach(ecf => {
+            const tipo = ecf.e_NCF?.substring(1, 3) || 'Otro';
+            if (!tipoData[tipo]) {
+                tipoData[tipo] = { cantidad: 0, monto: 0 };
+            }
+            tipoData[tipo].cantidad += 1;
+            tipoData[tipo].monto += ecf.monto || 0;
+        });
+        
+        // Convertir a array ordenado por tipo
+        return ncfTypeOrder
+            .filter(tipo => tipoData[tipo])
+            .map(tipo => ({
+                tipo: tipo,
+                name: tipoEcfMap[tipo] || `Tipo ${tipo}`,
+                shortName: tipo,
+                cantidad: tipoData[tipo].cantidad,
+                monto: tipoData[tipo].monto
+            }));
+    }, [ecfEmitidos]);
+
+    // Chart data - Ventas por cliente/receptor
+    const ventasPorClienteData = useMemo(() => {
+        const clienteData = {};
+        
+        ecfEmitidos.forEach(ecf => {
+            const cliente = ecf.razonSocialComprador || ecf.rncComprador || 'Sin identificar';
+            const clienteKey = cliente.substring(0, 20) + (cliente.length > 20 ? '...' : '');
+            if (!clienteData[clienteKey]) {
+                clienteData[clienteKey] = { cantidad: 0, monto: 0, fullName: cliente };
+            }
+            clienteData[clienteKey].cantidad += 1;
+            clienteData[clienteKey].monto += ecf.monto || 0;
+        });
+        
+        return Object.entries(clienteData)
+            .map(([name, data]) => ({
+                name,
+                fullName: data.fullName,
+                cantidad: data.cantidad,
+                monto: data.monto
+            }))
+            .sort((a, b) => b.monto - a.monto)
+            .slice(0, 5);
+    }, [ecfEmitidos]);
+
+    // Calcular ITBIS (18% del monto gravado aproximadamente)
+    const ventasDesglose = useMemo(() => {
+        const totalVentas = stats.montoEmitidos;
+        // Estimación: el ITBIS es aproximadamente el 15.25% del total (18/118)
+        const itbisEstimado = totalVentas * 0.1525;
+        const subtotal = totalVentas - itbisEstimado;
+        
+        return {
+            subtotal,
+            itbis: itbisEstimado,
+            total: totalVentas
+        };
+    }, [stats.montoEmitidos]);
+
     // Get status badge
     const getStatusBadge = (estado) => {
         const configs = {
