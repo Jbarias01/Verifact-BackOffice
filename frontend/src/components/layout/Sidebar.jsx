@@ -13,7 +13,8 @@ import {
     HelpCircle,
     Shield,
     UserCog,
-    Inbox
+    Inbox,
+    Send
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
