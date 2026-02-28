@@ -162,4 +162,4 @@
 
 ## Última Actualización
 - Fecha: 28 de febrero de 2026
-- Tarea completada: Módulo de Comprobantes Fiscales (NCF)
+- Tarea completada: Módulo e-CF Emitidos con filtros (desde, hasta, estado, rncReceptor)
