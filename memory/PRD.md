@@ -185,4 +185,4 @@
 
 ## Última Actualización
 - Fecha: 28 de febrero de 2026
-- Tarea completada: Dashboard actualizado con datos reales de facturación electrónica (e-CF Emitidos, e-CF Recibidos, Comprobantes NCF, Certificados)
+- Tarea completada: Dashboard con gráficos (Barras y Pie) y comprobantes NCF ordenados por tipo
