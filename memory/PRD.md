@@ -154,6 +154,7 @@
 
 ## Estado Actual
 - Login/Logout conectado al Backend REAL de Verifact
+- Dashboard con datos REALES de facturación electrónica
 - Gestión de Certificados (listar/subir)
 - Gestión de Facturas (listar/filtrar/ver/subir)
 - Gestión de Usuarios (CRUD completo)
@@ -166,9 +167,8 @@
 - Modo oscuro/claro
 - Paquete de despliegue IIS generado
 
-### Pendiente (MOCK o Placeholder)
-- Dashboard con datos MOCK (pendiente endpoints)
-- XML real de eCF recibidos (actualmente simulado)
+### Pendiente
+- XML real de eCF recibidos (actualmente simulado en módulo Recepción eCF)
 - **NOTA**: El endpoint `/api/ecf/emitidos` no está disponible en el ambiente de prueba (ecf-test.api.verifact.com.do). Funcionará en producción.
 
 ## Archivos de Despliegue
