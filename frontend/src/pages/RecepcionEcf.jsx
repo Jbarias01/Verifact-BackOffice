@@ -408,6 +408,7 @@ const RecepcionEcf = () => {
                                     <TableRow>
                                         <TableHead>eNCF</TableHead>
                                         <TableHead>RNC Emisor</TableHead>
+                                        <TableHead>Emisor</TableHead>
                                         <TableHead>Tipo</TableHead>
                                         <TableHead className="text-right">Monto</TableHead>
                                         <TableHead>Emisión</TableHead>
@@ -427,6 +428,14 @@ const RecepcionEcf = () => {
                                             </TableCell>
                                             <TableCell className="font-mono">
                                                 {ecf.rncEmisor}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                                    <span className="text-sm font-medium truncate max-w-[200px]" title={emisorNames[ecf.rncEmisor] || 'Cargando...'}>
+                                                        {emisorNames[ecf.rncEmisor] || 'Cargando...'}
+                                                    </span>
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <span className="text-sm" title={tipoEcfMap[ecf.tipoECF] || ecf.tipoECF}>
