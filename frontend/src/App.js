@@ -10,6 +10,7 @@ import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Certificados from '@/pages/Certificados';
 import Facturas from '@/pages/Facturas';
+import Usuarios from '@/pages/Usuarios';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
