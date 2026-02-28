@@ -1,14 +1,102 @@
-import React from 'react';
-import { FileText, FileCheck, FileClock, AlertCircle, Plus, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+    FileText, 
+    FileCheck, 
+    Inbox, 
+    Send,
+    Shield,
+    Receipt,
+    Calendar,
+    RefreshCw,
+    Loader2,
+    TrendingUp,
+    TrendingDown,
+    CheckCircle2,
+    Clock,
+    XCircle,
+    AlertTriangle,
+    ArrowRight,
+    ExternalLink
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { RecentInvoices } from '@/components/dashboard/RecentInvoices';
-import { InvoiceChart } from '@/components/dashboard/InvoiceChart';
-import { QuickActions } from '@/components/dashboard/QuickActions';
+import { Badge } from '@/components/ui/badge';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import axios from 'axios';
+
+// API URL Configuration
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
+const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : '';
+
+// Helper to format currency
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('es-DO', {
+        style: 'currency',
+        currency: 'DOP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount || 0);
+};
+
+// Helper to format date
+const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    if (dateString.includes('-') && dateString.length === 10 && !dateString.includes('T')) {
+        const parts = dateString.split('-');
+        if (parts[0].length === 2) {
+            return `${parts[0]}/${parts[1]}/${parts[2]}`;
+        }
+    }
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-DO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+};
+
+// Tipo eCF mapping
+const tipoEcfMap = {
+    '31': 'Crédito Fiscal',
+    '32': 'Consumo',
+    '33': 'Nota Débito',
+    '34': 'Nota Crédito',
+    '41': 'Compras',
+    '43': 'Gastos Menores',
+    '44': 'Reg. Especiales',
+    '45': 'Gubernamental',
+    '46': 'Exportación',
+    '47': 'Pagos Exterior'
+};
 
 const Dashboard = () => {
-    const { user, company } = useAuth();
+    const { user, company, token } = useAuth();
+    const navigate = useNavigate();
+    
+    // State for real data
+    const [isLoading, setIsLoading] = useState(true);
+    const [ecfEmitidos, setEcfEmitidos] = useState([]);
+    const [ecfRecibidos, setEcfRecibidos] = useState([]);
+    const [comprobantes, setComprobantes] = useState([]);
+    const [certificados, setCertificados] = useState([]);
+    const [error, setError] = useState(null);
 
     const currentDate = new Date().toLocaleDateString('es-DO', {
         weekday: 'long',
@@ -16,6 +104,134 @@ const Dashboard = () => {
         month: 'long',
         day: 'numeric'
     });
+
+    // Fetch all dashboard data
+    const fetchDashboardData = useCallback(async () => {
+        if (!token) return;
+        
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Fetch eCF Emitidos
+            try {
+                const emitidosRes = await axios.get(`${API_BASE_URL}/ecf/emitidos`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (emitidosRes.data?.facturas) {
+                    setEcfEmitidos(emitidosRes.data.facturas);
+                }
+            } catch (e) {
+                console.log('eCF Emitidos endpoint not available');
+            }
+
+            // Fetch eCF Recibidos
+            try {
+                const recibidosRes = await axios.get(`${API_BASE_URL}/fe/recepcion/ecf/recibidos/filtros`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (recibidosRes.data?.ecfRecibidos) {
+                    setEcfRecibidos(recibidosRes.data.ecfRecibidos);
+                }
+            } catch (e) {
+                console.log('eCF Recibidos endpoint not available');
+            }
+
+            // Fetch Comprobantes
+            try {
+                const comprobantesRes = await axios.get(`${API_BASE_URL}/comprobantes/cliente`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (Array.isArray(comprobantesRes.data)) {
+                    setComprobantes(comprobantesRes.data);
+                }
+            } catch (e) {
+                console.log('Comprobantes endpoint not available');
+            }
+
+            // Fetch Certificados
+            try {
+                const certificadosRes = await axios.get(`${API_BASE_URL}/certificado/listado`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (Array.isArray(certificadosRes.data)) {
+                    setCertificados(certificadosRes.data);
+                }
+            } catch (e) {
+                console.log('Certificados endpoint not available');
+            }
+
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+            setError('Error al cargar los datos del dashboard');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    // Calculate statistics
+    const stats = {
+        // eCF Emitidos
+        totalEmitidos: ecfEmitidos.length,
+        montoEmitidos: ecfEmitidos.reduce((sum, e) => sum + (e.monto || 0), 0),
+        emitidosAceptados: ecfEmitidos.filter(e => e.estado === 'Aceptado').length,
+        emitidosEnCola: ecfEmitidos.filter(e => !e.estado).length,
+        
+        // eCF Recibidos
+        totalRecibidos: ecfRecibidos.length,
+        montoRecibidos: ecfRecibidos.reduce((sum, e) => sum + (e.montoTotal || 0), 0),
+        
+        // Comprobantes
+        totalComprobantes: comprobantes.length,
+        comprobantesHabilitados: comprobantes.filter(c => c.habilitado).length,
+        
+        // Certificados
+        totalCertificados: certificados.length,
+        certificadosActivos: certificados.filter(c => c.estado === 'Activo' || c.esActivo).length
+    };
+
+    // Get status badge
+    const getStatusBadge = (estado) => {
+        const configs = {
+            'Aceptado': { label: 'Aceptado', icon: CheckCircle2, className: 'bg-success/10 text-success border-success/20' },
+            'Recibido': { label: 'Recibido', icon: CheckCircle2, className: 'bg-success/10 text-success border-success/20' },
+            'EnProceso': { label: 'En Proceso', icon: Clock, className: 'bg-info/10 text-info border-info/20' },
+            'Rechazado': { label: 'Rechazado', icon: XCircle, className: 'bg-destructive/10 text-destructive border-destructive/20' },
+            null: { label: 'En Cola', icon: Clock, className: 'bg-muted text-muted-foreground border-muted' }
+        };
+        const config = configs[estado] || configs[null];
+        const Icon = config.icon;
+        
+        return (
+            <Badge variant="outline" className={cn("text-xs", config.className)}>
+                <Icon className="h-3 w-3 mr-1" />
+                {config.label}
+            </Badge>
+        );
+    };
+
+    // Get certificate status
+    const getCertificateStatus = () => {
+        if (certificados.length === 0) return { status: 'none', message: 'Sin certificado', variant: 'destructive' };
+        const activo = certificados.find(c => c.estado === 'Activo' || c.esActivo);
+        if (activo) {
+            const vencimiento = activo.fechaVencimiento ? new Date(activo.fechaVencimiento) : null;
+            const hoy = new Date();
+            const diasRestantes = vencimiento ? Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24)) : null;
+            
+            if (diasRestantes && diasRestantes <= 30) {
+                return { status: 'warning', message: `Vence en ${diasRestantes} días`, variant: 'warning' };
+            }
+            return { status: 'active', message: 'Certificado activo', variant: 'success' };
+        }
+        return { status: 'expired', message: 'Certificado vencido', variant: 'destructive' };
+    };
+
+    const certStatus = getCertificateStatus();
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -30,122 +246,433 @@ const Dashboard = () => {
                         {currentDate.charAt(0).toUpperCase() + currentDate.slice(1)}
                     </p>
                 </div>
-                <Button className="bg-primary hover:bg-primary-hover">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nueva Factura
+                <Button 
+                    variant="outline" 
+                    onClick={fetchDashboardData}
+                    disabled={isLoading}
+                >
+                    <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+                    Actualizar
                 </Button>
             </div>
 
-            {/* Stats Grid */}
+            {/* Main Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Total Facturas"
-                    value="847"
-                    subtitle="Este mes"
-                    icon={FileText}
-                    trend="up"
-                    trendValue="+12.5%"
-                    variant="default"
-                />
-                <StatCard
-                    title="Facturas Emitidas"
-                    value="623"
-                    subtitle="Enviadas exitosamente"
-                    icon={FileCheck}
-                    trend="up"
-                    trendValue="+8.2%"
-                    variant="success"
-                />
-                <StatCard
-                    title="Pendientes de Pago"
-                    value="156"
-                    subtitle="Por cobrar"
-                    icon={FileClock}
-                    trend="down"
-                    trendValue="-3.1%"
-                    variant="warning"
-                />
-                <StatCard
-                    title="Vencidas"
-                    value="68"
-                    subtitle="Requieren atención"
-                    icon={AlertCircle}
-                    variant="default"
-                />
+                {/* eCF Emitidos */}
+                <Card 
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => navigate('/dashboard/reportes')}
+                    data-testid="stat-ecf-emitidos"
+                >
+                    <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">e-CF Emitidos</p>
+                                <p className="text-2xl font-bold text-foreground mt-1">
+                                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.totalEmitidos}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {formatCurrency(stats.montoEmitidos)}
+                                </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-primary/10">
+                                <Send className="h-6 w-6 text-primary" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* eCF Recibidos */}
+                <Card 
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => navigate('/dashboard/reportes-recibidos')}
+                    data-testid="stat-ecf-recibidos"
+                >
+                    <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">e-CF Recibidos</p>
+                                <p className="text-2xl font-bold text-foreground mt-1">
+                                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.totalRecibidos}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {formatCurrency(stats.montoRecibidos)}
+                                </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-success/10">
+                                <Inbox className="h-6 w-6 text-success" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Comprobantes NCF */}
+                <Card 
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => navigate('/dashboard/comprobantes')}
+                    data-testid="stat-comprobantes"
+                >
+                    <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Tipos NCF</p>
+                                <p className="text-2xl font-bold text-foreground mt-1">
+                                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.totalComprobantes}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {stats.comprobantesHabilitados} habilitados
+                                </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-accent/10">
+                                <Receipt className="h-6 w-6 text-accent" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Certificados */}
+                <Card 
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => navigate('/dashboard/certificados')}
+                    data-testid="stat-certificados"
+                >
+                    <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Certificados</p>
+                                <p className="text-2xl font-bold text-foreground mt-1">
+                                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.totalCertificados}
+                                </p>
+                                <Badge variant="outline" className={cn(
+                                    "mt-1 text-xs",
+                                    certStatus.variant === 'success' && "bg-success/10 text-success border-success/20",
+                                    certStatus.variant === 'warning' && "bg-warning/10 text-warning border-warning/20",
+                                    certStatus.variant === 'destructive' && "bg-destructive/10 text-destructive border-destructive/20"
+                                )}>
+                                    {certStatus.message}
+                                </Badge>
+                            </div>
+                            <div className={cn(
+                                "p-3 rounded-xl",
+                                certStatus.variant === 'success' && "bg-success/10",
+                                certStatus.variant === 'warning' && "bg-warning/10",
+                                certStatus.variant === 'destructive' && "bg-destructive/10"
+                            )}>
+                                <Shield className={cn(
+                                    "h-6 w-6",
+                                    certStatus.variant === 'success' && "text-success",
+                                    certStatus.variant === 'warning' && "text-warning",
+                                    certStatus.variant === 'destructive' && "text-destructive"
+                                )} />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Quick Actions */}
-            <QuickActions />
+            {/* Quick Navigation & Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Resumen Financiero */}
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="text-lg">Resumen de Facturación</CardTitle>
+                        <CardDescription>Montos totales de comprobantes electrónicos</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Send className="h-5 w-5 text-primary" />
+                                    <span className="text-sm font-medium text-muted-foreground">Total Emitido</span>
+                                </div>
+                                <p className="text-2xl font-bold text-foreground">
+                                    {formatCurrency(stats.montoEmitidos)}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {stats.totalEmitidos} comprobante(s)
+                                </p>
+                            </div>
+                            <div className="p-4 rounded-lg bg-success/5 border border-success/10">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Inbox className="h-5 w-5 text-success" />
+                                    <span className="text-sm font-medium text-muted-foreground">Total Recibido</span>
+                                </div>
+                                <p className="text-2xl font-bold text-foreground">
+                                    {formatCurrency(stats.montoRecibidos)}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {stats.totalRecibidos} comprobante(s)
+                                </p>
+                            </div>
+                        </div>
 
-            {/* Charts and Recent Invoices */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <InvoiceChart />
-                <div className="space-y-6">
-                    {/* Summary Card */}
-                    <div className="rounded-xl border bg-card p-6">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Resumen del Mes</h3>
-                        <div className="space-y-4">
+                        {/* Balance */}
+                        <div className="mt-4 p-4 rounded-lg bg-secondary/50">
                             <div className="flex items-center justify-between">
-                                <span className="text-muted-foreground">Total Facturado</span>
-                                <span className="text-xl font-bold text-foreground">RD$ 2,450,780.00</span>
-                            </div>
-                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                                <div className="h-full w-[73%] bg-gradient-to-r from-primary to-accent rounded-full" />
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">73% del objetivo mensual</span>
-                                <span className="text-accent font-medium">Meta: RD$ 3,350,000.00</span>
+                                <span className="text-sm font-medium text-muted-foreground">Balance Neto</span>
+                                <span className={cn(
+                                    "text-xl font-bold",
+                                    stats.montoEmitidos - stats.montoRecibidos >= 0 ? "text-success" : "text-destructive"
+                                )}>
+                                    {formatCurrency(stats.montoEmitidos - stats.montoRecibidos)}
+                                </span>
                             </div>
                         </div>
-                        
-                        <div className="mt-6 pt-6 border-t grid grid-cols-2 gap-4">
-                            <div className="text-center p-3 rounded-lg bg-success-light">
-                                <p className="text-2xl font-bold text-success">RD$ 1,890,450</p>
-                                <p className="text-sm text-success/80">Cobrado</p>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-warning-light">
-                                <p className="text-2xl font-bold text-warning">RD$ 560,330</p>
-                                <p className="text-sm text-warning/80">Por cobrar</p>
-                            </div>
-                        </div>
-                    </div>
+                    </CardContent>
+                </Card>
 
-                    {/* Top Clients */}
-                    <div className="rounded-xl border bg-card p-6">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Principales Clientes</h3>
-                        <div className="space-y-3">
-                            {[
-                                { name: 'Comercial ABC S.R.L.', amount: 'RD$ 345,200', invoices: 12 },
-                                { name: 'Distribuidora XYZ', amount: 'RD$ 289,450', invoices: 8 },
-                                { name: 'Importadora del Caribe', amount: 'RD$ 234,100', invoices: 6 },
-                                { name: 'Servicios Técnicos RD', amount: 'RD$ 178,900', invoices: 15 },
-                            ].map((client, index) => (
+                {/* Accesos Rápidos */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Accesos Rápidos</CardTitle>
+                        <CardDescription>Módulos principales</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Button 
+                            variant="outline" 
+                            className="w-full justify-between"
+                            onClick={() => navigate('/dashboard/facturas')}
+                        >
+                            <span className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Facturas XML
+                            </span>
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            className="w-full justify-between"
+                            onClick={() => navigate('/dashboard/recepcion-ecf')}
+                        >
+                            <span className="flex items-center gap-2">
+                                <Inbox className="h-4 w-4" />
+                                Recepción eCF
+                            </span>
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            className="w-full justify-between"
+                            onClick={() => navigate('/dashboard/usuarios')}
+                        >
+                            <span className="flex items-center gap-2">
+                                <Shield className="h-4 w-4" />
+                                Usuarios
+                            </span>
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            className="w-full justify-between"
+                            onClick={() => navigate('/dashboard/empresa')}
+                        >
+                            <span className="flex items-center gap-2">
+                                <FileCheck className="h-4 w-4" />
+                                Mi Empresa
+                            </span>
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Recent eCF Tables */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* Últimos eCF Emitidos */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg">Últimos e-CF Emitidos</CardTitle>
+                            <CardDescription>Comprobantes enviados recientemente</CardDescription>
+                        </div>
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => navigate('/dashboard/reportes')}
+                        >
+                            Ver todos
+                            <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                        ) : ecfEmitidos.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground text-sm">
+                                No hay e-CF emitidos
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>e-NCF</TableHead>
+                                            <TableHead>Receptor</TableHead>
+                                            <TableHead className="text-right">Monto</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {ecfEmitidos.slice(0, 5).map((ecf) => (
+                                            <TableRow key={ecf.id}>
+                                                <TableCell className="font-mono text-sm">{ecf.e_NCF}</TableCell>
+                                                <TableCell className="text-sm truncate max-w-[150px]">
+                                                    {ecf.razonSocialComprador || ecf.rncComprador}
+                                                </TableCell>
+                                                <TableCell className="text-right font-medium">
+                                                    {formatCurrency(ecf.monto)}
+                                                </TableCell>
+                                                <TableCell>{getStatusBadge(ecf.estado)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Últimos eCF Recibidos */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg">Últimos e-CF Recibidos</CardTitle>
+                            <CardDescription>Comprobantes recibidos recientemente</CardDescription>
+                        </div>
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => navigate('/dashboard/reportes-recibidos')}
+                        >
+                            Ver todos
+                            <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                        ) : ecfRecibidos.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground text-sm">
+                                No hay e-CF recibidos
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>e-NCF</TableHead>
+                                            <TableHead>RNC Emisor</TableHead>
+                                            <TableHead className="text-right">Monto</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {ecfRecibidos.slice(0, 5).map((ecf, index) => (
+                                            <TableRow key={`${ecf.encf}-${index}`}>
+                                                <TableCell className="font-mono text-sm">{ecf.encf}</TableCell>
+                                                <TableCell className="font-mono text-sm">{ecf.rncEmisor}</TableCell>
+                                                <TableCell className="text-right font-medium">
+                                                    {formatCurrency(ecf.montoTotal)}
+                                                </TableCell>
+                                                <TableCell>{getStatusBadge(ecf.estado)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Comprobantes NCF Status */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="text-lg">Estado de Comprobantes NCF</CardTitle>
+                        <CardDescription>Secuencias de comprobantes fiscales asignados por la DGII</CardDescription>
+                    </div>
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => navigate('/dashboard/comprobantes')}
+                    >
+                        Ver detalles
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                    ) : comprobantes.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground text-sm">
+                            No hay comprobantes asignados
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {comprobantes.map((comp) => (
                                 <div 
-                                    key={index}
-                                    className="flex items-center justify-between p-3 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                                    key={comp.id}
+                                    className={cn(
+                                        "p-3 rounded-lg border text-center transition-colors",
+                                        comp.habilitado 
+                                            ? "bg-success/5 border-success/20" 
+                                            : "bg-muted/50 border-muted"
+                                    )}
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                                            {client.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-foreground">{client.name}</p>
-                                            <p className="text-xs text-muted-foreground">{client.invoices} facturas</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-semibold text-foreground">{client.amount}</span>
+                                    <p className={cn(
+                                        "text-2xl font-bold",
+                                        comp.habilitado ? "text-success" : "text-muted-foreground"
+                                    )}>
+                                        {comp.tipoeCF}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate" title={comp.descripcion}>
+                                        {tipoEcfMap[comp.tipoeCF] || comp.descripcion}
+                                    </p>
+                                    <Badge 
+                                        variant="outline" 
+                                        className={cn(
+                                            "mt-2 text-[10px]",
+                                            comp.habilitado 
+                                                ? "bg-success/10 text-success border-success/20" 
+                                                : "bg-muted text-muted-foreground"
+                                        )}
+                                    >
+                                        {comp.habilitado ? 'Habilitado' : 'Deshabilitado'}
+                                    </Badge>
                                 </div>
                             ))}
                         </div>
-                        <Button variant="ghost" className="w-full mt-4 text-primary">
-                            Ver todos los clientes
-                        </Button>
-                    </div>
-                </div>
-            </div>
+                    )}
+                </CardContent>
+            </Card>
 
-            {/* Recent Invoices Table */}
-            <RecentInvoices />
+            {/* Company Info Footer */}
+            <Card className="bg-primary/5 border-primary/10">
+                <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Empresa</p>
+                            <p className="text-lg font-bold text-foreground">{company?.name || 'Mi Empresa'}</p>
+                            <p className="text-sm text-muted-foreground">RNC: {company?.rnc || 'N/A'}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/empresa')}>
+                                Ver información
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/configuracion')}>
+                                Configuración
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 };
