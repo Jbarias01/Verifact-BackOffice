@@ -47,6 +47,7 @@ function App() {
                         <Route path="/dashboard" element={<DashboardLayout />}>
                             <Route index element={<Dashboard />} />
                             <Route path="facturas" element={<Facturas />} />
+                            <Route path="recepcion-ecf" element={<RecepcionEcf />} />
                             <Route path="clientes" element={<PlaceholderPage title="Gestión de Clientes" />} />
                             <Route path="emitidas" element={<PlaceholderPage title="Facturas Emitidas" />} />
                             <Route path="pendientes" element={<PlaceholderPage title="Facturas Pendientes" />} />
