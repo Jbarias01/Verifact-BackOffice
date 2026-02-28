@@ -95,7 +95,7 @@ export const Sidebar = () => {
             )}>
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        <FileCheck className="h-5 w-5 text-primary-foreground" />
+                        <FileText className="h-5 w-5 text-primary-foreground" />
                     </div>
                     {!isCollapsed && (
                         <div>
