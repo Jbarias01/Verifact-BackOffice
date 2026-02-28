@@ -52,7 +52,7 @@
 - **Descargar XML** (simulado)
 - Estadísticas: Total recibidos, estado, monto total
 
-### 9. Comprobantes Fiscales (NCF) - NUEVO
+### 9. Comprobantes Fiscales (NCF)
 - **Listar secuencias NCF** asignadas al cliente
 - Tipos de comprobantes (31-47):
   - 31: Factura de Crédito Fiscal Electrónica
@@ -69,7 +69,19 @@
 - **Estado**: Habilitado/Deshabilitado
 - **Secuencia actual** y rango asignado
 
-### 10. Navegación y Diseño
+### 10. e-CF Emitidos (Reportes) - NUEVO
+- **Listar e-CF emitidos** por la empresa
+- **Filtros disponibles:**
+  - Fecha Desde / Hasta
+  - Estado (Aceptado, Aceptado Condicional, En Proceso, Rechazado)
+  - RNC Receptor
+- **Búsqueda local** por eNCF, RNC, razón social
+- **Ver detalle** completo del e-CF
+- **Previsualizar XML** con formato legible
+- **Descargar XML** original firmado
+- **Estadísticas**: Total emitidos, Aceptados, En Cola, Monto Total
+
+### 11. Navegación y Diseño
 - **Sidebar Colapsable** con secciones organizadas:
   - Principal: Dashboard
   - Facturación: Facturas, Recepción eCF, Comprobantes
