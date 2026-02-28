@@ -12,11 +12,21 @@
 - **Registro de Empresa**: Wizard de 3 pasos para registrar empresas (endpoint público)
 - Formato RNC validado: XXX-XXXXX-X
 
-### 2. Dashboard Principal
-- **Estadísticas de Facturación**: Total, emitidas, pendientes, vencidas
-- **Gráficos de Análisis**: Facturas por mes e ingresos anuales (datos MOCK)
-- **Acciones Rápidas**: Nueva Factura, Nuevo Cliente, Comprobante, Importar, Exportar
-- **Tabla de Facturas Recientes**
+### 2. Dashboard Principal (ACTUALIZADO - DATOS REALES)
+- **Estadísticas principales con datos del API:**
+  - e-CF Emitidos (cantidad y monto total)
+  - e-CF Recibidos (cantidad y monto total)
+  - Tipos NCF (total y habilitados)
+  - Certificados (estado del certificado digital)
+- **Resumen de Facturación:**
+  - Total Emitido
+  - Total Recibido
+  - Balance Neto
+- **Accesos Rápidos:** Facturas XML, Recepción eCF, Usuarios, Mi Empresa
+- **Últimos e-CF Emitidos:** Tabla con los 5 más recientes
+- **Últimos e-CF Recibidos:** Tabla con los 5 más recientes
+- **Estado de Comprobantes NCF:** Grid visual de los 10 tipos de NCF
+- **Información de Empresa:** Footer con datos y accesos rápidos
 
 ### 3. Gestión de Certificados
 - **Listar certificados** digitales (.p12)
