@@ -13,6 +13,7 @@ import Facturas from '@/pages/Facturas';
 import Usuarios from '@/pages/Usuarios';
 import Empresa from '@/pages/Empresa';
 import Configuracion from '@/pages/Configuracion';
+import RecepcionEcf from '@/pages/RecepcionEcf';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
