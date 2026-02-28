@@ -38,7 +38,7 @@ const menuItems = [
     {
         title: 'Reportes',
         items: [
-            { name: 'Reportes', icon: BarChart3, path: '/dashboard/reportes' },
+            { name: 'e-CF Emitidos', icon: Send, path: '/dashboard/reportes' },
         ]
     },
     {
