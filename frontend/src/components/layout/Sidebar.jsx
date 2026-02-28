@@ -41,6 +41,7 @@ const menuItems = [
         title: 'Administración',
         items: [
             { name: 'Certificados', icon: Shield, path: '/dashboard/certificados' },
+            { name: 'Usuarios', icon: Users, path: '/dashboard/usuarios' },
             { name: 'Reportes', icon: BarChart3, path: '/dashboard/reportes' },
             { name: 'Empresa', icon: Building2, path: '/dashboard/empresa' },
             { name: 'Configuración', icon: Settings, path: '/dashboard/configuracion' },
