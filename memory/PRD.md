@@ -186,4 +186,4 @@
 
 ## Última Actualización
 - Fecha: 28 de febrero de 2026
-- Tarea completada: Módulo e-CF Recibidos con filtros (rncEmisor, rncReceptor, desde, hasta, estado)
+- Tarea completada: Dashboard actualizado con datos reales de facturación electrónica (e-CF Emitidos, e-CF Recibidos, Comprobantes NCF, Certificados)
