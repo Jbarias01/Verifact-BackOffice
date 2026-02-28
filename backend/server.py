@@ -871,6 +871,75 @@ async def proxy_get_clientes(authorization: str = Header(...)):
         logger.error(f"Error getting clients: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+# =============================================
+# CAMBIO DE CONTRASEÑA API PROXY ENDPOINT
+# =============================================
+
+class ChangePasswordRequest(BaseModel):
+    currentPassword: str
+    newPassword: str
+
+@api_router.post("/usuarios/{user_id}/password")
+async def proxy_change_password(user_id: str, password_data: ChangePasswordRequest, authorization: str = Header(...)):
+    """
+    Proxy endpoint to change user password in Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/usuarios/{user_id}/password",
+                json={
+                    "currentPassword": password_data.currentPassword,
+                    "newPassword": password_data.newPassword
+                },
+                headers={
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                return {"success": True, "message": "Contraseña actualizada exitosamente"}
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("error") or error_data.get("message") or "Contraseña actual incorrecta"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": "Contraseña actual incorrecta"
+                    }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error changing password: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
