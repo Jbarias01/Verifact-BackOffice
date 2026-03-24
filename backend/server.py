@@ -1325,6 +1325,222 @@ async def proxy_create_sucursal(request: Request, authorization: str = Header(..
         logger.error(f"Error creating sucursal: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+# =============================================
+# CLIENTES API PROXY ENDPOINTS
+# =============================================
+
+@api_router.get("/clientes/lista")
+async def proxy_get_clientes(authorization: str = Header(...)):
+    """
+    Proxy endpoint to get list of clients from Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/clientes",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            else:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=response.status_code, detail=f"Error del servidor: {response.status_code}")
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting clientes: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.get("/clientes/lista/{cliente_id}")
+async def proxy_get_cliente_by_id(cliente_id: str, authorization: str = Header(...)):
+    """
+    Proxy endpoint to get a client by ID from Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/clientes/{cliente_id}",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Cliente no encontrado")
+            else:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=response.status_code, detail=f"Error del servidor: {response.status_code}")
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting cliente by id: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.post("/clientes/lista")
+async def proxy_create_cliente(request: Request, authorization: str = Header(...)):
+    """
+    Proxy endpoint to create a new client in Verifact API.
+    """
+    try:
+        body = await request.json()
+        
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/clientes",
+                json=body,
+                headers={
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                try:
+                    return response.json()
+                except:
+                    return {"success": True, "message": "Cliente creado exitosamente"}
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=400,
+                        detail=error_data.get("error") or error_data.get("message") or "Error de validación"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=400, detail="Error de validación")
+            else:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=response.status_code, detail=f"Error del servidor: {response.status_code}")
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating cliente: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.put("/clientes/lista/{cliente_id}")
+async def proxy_update_cliente(cliente_id: str, request: Request, authorization: str = Header(...)):
+    """
+    Proxy endpoint to update a client in Verifact API.
+    """
+    try:
+        body = await request.json()
+        
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.put(
+                f"{VERIFACT_API_URL}/api/clientes/{cliente_id}",
+                json=body,
+                headers={
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201, 204]:
+                try:
+                    return response.json()
+                except:
+                    return {"success": True, "message": "Cliente actualizado exitosamente"}
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Cliente no encontrado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=400,
+                        detail=error_data.get("error") or error_data.get("message") or "Error de validación"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=400, detail="Error de validación")
+            else:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=response.status_code, detail=f"Error del servidor: {response.status_code}")
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating cliente: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 

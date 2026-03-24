@@ -18,6 +18,7 @@ import Comprobantes from '@/pages/Comprobantes';
 import EcfEmitidos from '@/pages/EcfEmitidos';
 import EcfRecibidosReport from '@/pages/EcfRecibidosReport';
 import Sucursales from '@/pages/Sucursales';
+import Clientes from '@/pages/Clientes';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -52,7 +53,7 @@ function App() {
                             <Route index element={<Dashboard />} />
                             <Route path="facturas" element={<Facturas />} />
                             <Route path="recepcion-ecf" element={<RecepcionEcf />} />
-                            <Route path="clientes" element={<PlaceholderPage title="Gestión de Clientes" />} />
+                            <Route path="clientes" element={<Clientes />} />
                             <Route path="emitidas" element={<PlaceholderPage title="Facturas Emitidas" />} />
                             <Route path="pendientes" element={<PlaceholderPage title="Facturas Pendientes" />} />
                             <Route path="comprobantes" element={<Comprobantes />} />

@@ -15,7 +15,8 @@ import {
     UserCog,
     Inbox,
     Send,
-    Store
+    Store,
+    Users
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ const menuItems = [
         title: 'Facturación',
         items: [
             { name: 'Facturas', icon: FileText, path: '/dashboard/facturas' },
+            { name: 'Clientes', icon: Users, path: '/dashboard/clientes' },
             { name: 'Recepción eCF', icon: Inbox, path: '/dashboard/recepcion-ecf' },
             { name: 'Comprobantes', icon: Receipt, path: '/dashboard/comprobantes' },
         ]

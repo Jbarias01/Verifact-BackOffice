@@ -120,7 +120,25 @@
 - **Búsqueda** por nombre, código o dirección
 - **Estados:** Activa/Inactiva, Principal
 
-### 13. Navegación y Diseño
+### 13. Clientes (NUEVO) - CRUD Completo
+- **Listar clientes** de la empresa
+- **Crear nuevo cliente** con datos:
+  - Código Interno
+  - Nombre (requerido)
+  - Cédula/RNC (requerido)
+  - Teléfono
+  - Email
+  - Dirección
+- **Configuración de Crédito:**
+  - Crédito Habilitado (switch)
+  - Límite de Crédito (RD$)
+  - Días de Crédito
+- **Editar cliente existente**
+- **Ver detalle completo** del cliente
+- **Estadísticas:** Total, Activos, Con Crédito
+- **Búsqueda** por nombre, código, RNC, email, teléfono
+
+### 14. Navegación y Diseño
 - **Sidebar Colapsable** con secciones organizadas:
   - Principal: Dashboard
   - Facturación: Facturas, Recepción eCF, Comprobantes
@@ -170,6 +188,10 @@
 | `/api/fe/recepcion/ecf/recibidos/filtros` | GET | e-CF recibidos (con filtros) |
 | `/api/sucursales` | GET | Listar sucursales |
 | `/api/sucursales` | POST | Crear sucursal |
+| `/api/clientes/lista` | GET | Listar clientes |
+| `/api/clientes/lista` | POST | Crear cliente |
+| `/api/clientes/lista/{id}` | GET | Obtener cliente por ID |
+| `/api/clientes/lista/{id}` | PUT | Actualizar cliente |
 
 ## Estado Actual
 - Login/Logout conectado al Backend REAL de Verifact
@@ -205,4 +227,4 @@
 
 ## Última Actualización
 - Fecha: 24 de marzo de 2026
-- Tarea completada: Módulo de Sucursales (listar, crear, buscar)
+- Tarea completada: Módulo de Clientes (CRUD completo: listar, crear, editar, ver detalle, configuración de crédito)
