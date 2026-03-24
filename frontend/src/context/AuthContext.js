@@ -240,12 +240,13 @@ export const AuthProvider = ({ children }) => {
                     email: data.usuario.email,
                     name: data.usuario.nombre,
                     role: data.usuario.rol,
-                    avatar: null
+                    avatar: null,
+                    sucursal: data.usuario.sucursal || null
                 };
                 
                 // Extract company data from response
                 const companyData = {
-                    id: data.usuario.clienteId,
+                    id: data.usuario.tenantId,
                     name: data.usuario.clienteNombre,
                     rnc: data.usuario.clienteRNC,
                     address: '',

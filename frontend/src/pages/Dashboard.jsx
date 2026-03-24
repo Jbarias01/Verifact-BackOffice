@@ -16,7 +16,8 @@ import {
     XCircle,
     AlertTriangle,
     ArrowRight,
-    BarChart3
+    BarChart3,
+    Building2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -418,9 +419,20 @@ const Dashboard = () => {
                     <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                         ¡Bienvenido, {user?.name?.split(' ')[0] || 'Usuario'}!
                     </h1>
-                    <p className="text-muted-foreground mt-1 flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {currentDate.charAt(0).toUpperCase() + currentDate.slice(1)}
+                    <p className="text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                        <span className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {currentDate.charAt(0).toUpperCase() + currentDate.slice(1)}
+                        </span>
+                        {user?.sucursal && (
+                            <>
+                                <span className="text-muted-foreground/50">•</span>
+                                <span className="flex items-center gap-1">
+                                    <Building2 className="h-4 w-4" />
+                                    {user.sucursal.nombre}
+                                </span>
+                            </>
+                        )}
                     </p>
                 </div>
                 <Button 
