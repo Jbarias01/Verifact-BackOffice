@@ -14,7 +14,8 @@ import {
     Shield,
     UserCog,
     Inbox,
-    Send
+    Send,
+    Store
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,7 @@ const menuItems = [
         items: [
             { name: 'Certificados', icon: Shield, path: '/dashboard/certificados' },
             { name: 'Usuarios', icon: UserCog, path: '/dashboard/usuarios' },
+            { name: 'Sucursales', icon: Store, path: '/dashboard/sucursales' },
             { name: 'Empresa', icon: Building2, path: '/dashboard/empresa' },
             { name: 'Configuración', icon: Settings, path: '/dashboard/configuracion' },
         ]

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Header, UploadFile, File, Form
+from fastapi import FastAPI, APIRouter, HTTPException, Header, UploadFile, File, Form, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -1217,6 +1217,112 @@ async def proxy_get_ecf_recibidos_filtros(
         raise
     except Exception as e:
         logger.error(f"Error getting received eCF with filters: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+# =============================================
+# SUCURSALES API PROXY ENDPOINTS
+# =============================================
+
+@api_router.get("/sucursales")
+async def proxy_get_sucursales(authorization: str = Header(...)):
+    """
+    Proxy endpoint to get list of branches (sucursales) from Verifact API.
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{VERIFACT_API_URL}/api/sucursales",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            else:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    )
+                except:
+                    raise HTTPException(status_code=response.status_code, detail=f"Error del servidor: {response.status_code}")
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting sucursales: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@api_router.post("/sucursales")
+async def proxy_create_sucursal(request: Request, authorization: str = Header(...)):
+    """
+    Proxy endpoint to create a new branch (sucursal) in Verifact API.
+    """
+    try:
+        body = await request.json()
+        
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{VERIFACT_API_URL}/api/sucursales",
+                json=body,
+                headers={
+                    "Authorization": authorization,
+                    "Content-Type": "application/json",
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                try:
+                    return response.json()
+                except:
+                    return {"success": True, "message": "Sucursal creada exitosamente"}
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="No autorizado")
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=400,
+                        detail=error_data.get("error") or error_data.get("message") or "Error de validación"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=400, detail="Error de validación")
+            else:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    )
+                except HTTPException:
+                    raise
+                except:
+                    raise HTTPException(status_code=response.status_code, detail=f"Error del servidor: {response.status_code}")
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating sucursal: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 # Include the router in the main app

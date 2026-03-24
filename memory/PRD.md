@@ -108,7 +108,19 @@
 - **Información mostrada:** Archivo XML, Ruta del archivo, fechas
 - **Estadísticas**: Total recibidos, Estado Recibido, Monto Total
 
-### 12. Navegación y Diseño
+### 12. Sucursales (NUEVO)
+- **Listar sucursales** de la empresa
+- **Crear nueva sucursal** con datos:
+  - Nombre (requerido)
+  - Código (requerido)
+  - Dirección
+  - Teléfono
+  - Marcar como Principal
+- **Estadísticas:** Total, Activas, Sucursal Principal
+- **Búsqueda** por nombre, código o dirección
+- **Estados:** Activa/Inactiva, Principal
+
+### 13. Navegación y Diseño
 - **Sidebar Colapsable** con secciones organizadas:
   - Principal: Dashboard
   - Facturación: Facturas, Recepción eCF, Comprobantes
@@ -156,6 +168,8 @@
 | `/api/comprobantes/cliente` | GET | Secuencias NCF |
 | `/api/ecf/emitidos` | GET | e-CF emitidos (con filtros) |
 | `/api/fe/recepcion/ecf/recibidos/filtros` | GET | e-CF recibidos (con filtros) |
+| `/api/sucursales` | GET | Listar sucursales |
+| `/api/sucursales` | POST | Crear sucursal |
 
 ## Estado Actual
 - Login/Logout conectado al Backend REAL de Verifact
@@ -190,5 +204,5 @@
 - Password: Admin123!
 
 ## Última Actualización
-- Fecha: 28 de febrero de 2026
-- Tarea completada: Dashboard con gráfico Hero de Ventas (grande, orientado a ventas con desglose ITBIS y Top Clientes)
+- Fecha: 24 de marzo de 2026
+- Tarea completada: Módulo de Sucursales (listar, crear, buscar)

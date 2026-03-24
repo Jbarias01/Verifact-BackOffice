@@ -17,6 +17,7 @@ import RecepcionEcf from '@/pages/RecepcionEcf';
 import Comprobantes from '@/pages/Comprobantes';
 import EcfEmitidos from '@/pages/EcfEmitidos';
 import EcfRecibidosReport from '@/pages/EcfRecibidosReport';
+import Sucursales from '@/pages/Sucursales';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -60,6 +61,7 @@ function App() {
                             <Route path="reportes" element={<EcfEmitidos />} />
                             <Route path="reportes-recibidos" element={<EcfRecibidosReport />} />
                             <Route path="empresa" element={<Empresa />} />
+                            <Route path="sucursales" element={<Sucursales />} />
                             <Route path="configuracion" element={<Configuracion />} />
                         </Route>
                         
