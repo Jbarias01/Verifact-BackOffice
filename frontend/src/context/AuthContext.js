@@ -23,14 +23,28 @@ export const VERIFACT_ENVIRONMENTS = [
     { value: 'prod', label: 'Producción', url: 'https://ecf.api.verifact.com.do' }
 ];
 
-const DEFAULT_ENVIRONMENT = 'prod';
+const DEFAULT_ENVIRONMENT = 'test';
 const ENV_STORAGE_KEY = 'verifact_environment';
+// Lock the environment for now. When set to true, the UI dropdowns are
+// disabled and the runtime env is always forced to DEFAULT_ENVIRONMENT.
+export const ENV_LOCKED = true;
+
+// Ensure localStorage matches the locked env so any cached value is overridden
+try {
+    if (ENV_LOCKED) {
+        localStorage.setItem(ENV_STORAGE_KEY, DEFAULT_ENVIRONMENT);
+    }
+} catch (e) {
+    // ignore storage errors (e.g. SSR)
+}
 
 // Install a global axios interceptor that injects the X-Verifact-Env header
 // on every request. Reads the env from localStorage so it survives reloads.
 axios.interceptors.request.use((config) => {
     try {
-        const env = localStorage.getItem(ENV_STORAGE_KEY) || DEFAULT_ENVIRONMENT;
+        const env = ENV_LOCKED
+            ? DEFAULT_ENVIRONMENT
+            : (localStorage.getItem(ENV_STORAGE_KEY) || DEFAULT_ENVIRONMENT);
         config.headers = config.headers || {};
         config.headers['X-Verifact-Env'] = env;
     } catch (e) {
@@ -56,6 +70,7 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [environment, setEnvironmentState] = useState(() => {
+        if (ENV_LOCKED) return DEFAULT_ENVIRONMENT;
         try {
             return localStorage.getItem(ENV_STORAGE_KEY) || DEFAULT_ENVIRONMENT;
         } catch (e) {
@@ -66,6 +81,7 @@ export const AuthProvider = ({ children }) => {
     const isRefreshingRef = useRef(false);
 
     const setEnvironment = useCallback((env) => {
+        if (ENV_LOCKED) return; // environment is locked
         if (!VERIFACT_ENVIRONMENTS.find(e => e.value === env)) return;
         localStorage.setItem(ENV_STORAGE_KEY, env);
         setEnvironmentState(env);
@@ -488,6 +504,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         environment,
         environments: VERIFACT_ENVIRONMENTS,
+        envLocked: ENV_LOCKED,
         setEnvironment,
         login,
         register,

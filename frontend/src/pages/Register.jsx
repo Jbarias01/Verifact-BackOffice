@@ -26,7 +26,7 @@ const steps = [
 
 const Register = () => {
     const navigate = useNavigate();
-    const { register, isAuthenticated, environment, environments, setEnvironment, consultRNC } = useAuth();
+    const { register, isAuthenticated, environment, environments, setEnvironment, consultRNC, envLocked } = useAuth();
     
     const [currentStep, setCurrentStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -344,11 +344,12 @@ const Register = () => {
                                         <Label htmlFor="reg-environment">Ambiente de Registro</Label>
                                         <div className="relative">
                                             <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
-                                            <Select value={selectedEnv} onValueChange={handleEnvChange}>
+                                            <Select value={selectedEnv} onValueChange={handleEnvChange} disabled={envLocked}>
                                                 <SelectTrigger
                                                     id="reg-environment"
                                                     className="pl-10"
                                                     data-testid="register-environment-select"
+                                                    disabled={envLocked}
                                                 >
                                                     <SelectValue placeholder="Selecciona un ambiente" />
                                                 </SelectTrigger>
@@ -375,6 +376,11 @@ const Register = () => {
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                        {envLocked && (
+                                            <p className="text-xs text-muted-foreground italic">
+                                                Ambiente fijado temporalmente en Test/Desarrollo.
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* RNC first */}

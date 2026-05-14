@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, isAuthenticated, isLoading, environment, environments, setEnvironment } = useAuth();
+    const { login, isAuthenticated, isLoading, environment, environments, setEnvironment, envLocked } = useAuth();
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -166,11 +166,12 @@ const Login = () => {
                             <Label htmlFor="environment">Ambiente</Label>
                             <div className="relative">
                                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
-                                <Select value={selectedEnv} onValueChange={handleEnvChange}>
+                                <Select value={selectedEnv} onValueChange={handleEnvChange} disabled={envLocked}>
                                     <SelectTrigger
                                         id="environment"
                                         className="pl-10"
                                         data-testid="login-environment-select"
+                                        disabled={envLocked}
                                     >
                                         <SelectValue placeholder="Selecciona un ambiente" />
                                     </SelectTrigger>
@@ -199,6 +200,9 @@ const Login = () => {
                             </div>
                             <p className="text-xs text-muted-foreground" data-testid="login-env-url-hint">
                                 {environments.find(e => e.value === selectedEnv)?.url}
+                                {envLocked && (
+                                    <span className="ml-1 italic">· Ambiente bloqueado temporalmente</span>
+                                )}
                             </p>
                         </div>
 
