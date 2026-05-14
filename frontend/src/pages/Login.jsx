@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, FileCheck, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, FileCheck, ArrowRight, Loader2, CheckCircle2, Globe } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, isAuthenticated, isLoading } = useAuth();
+    const { login, isAuthenticated, isLoading, environment, environments, setEnvironment } = useAuth();
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -20,6 +27,7 @@ const Login = () => {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedEnv, setSelectedEnv] = useState(environment);
 
     // Check for success message from registration
     useEffect(() => {
@@ -49,7 +57,7 @@ const Login = () => {
             return;
         }
 
-        const result = await login(email, password);
+        const result = await login(email, password, selectedEnv);
         
         if (result.success) {
             navigate('/dashboard');
@@ -58,6 +66,11 @@ const Login = () => {
         }
         
         setIsSubmitting(false);
+    };
+
+    const handleEnvChange = (value) => {
+        setSelectedEnv(value);
+        setEnvironment(value);
     };
 
     return (
@@ -150,6 +163,46 @@ const Login = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
+                            <Label htmlFor="environment">Ambiente</Label>
+                            <div className="relative">
+                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
+                                <Select value={selectedEnv} onValueChange={handleEnvChange}>
+                                    <SelectTrigger
+                                        id="environment"
+                                        className="pl-10"
+                                        data-testid="login-environment-select"
+                                    >
+                                        <SelectValue placeholder="Selecciona un ambiente" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {environments.map((env) => (
+                                            <SelectItem
+                                                key={env.value}
+                                                value={env.value}
+                                                data-testid={`env-option-${env.value}`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className={cn(
+                                                            "w-2 h-2 rounded-full",
+                                                            env.value === 'prod' && 'bg-success',
+                                                            env.value === 'cert' && 'bg-warning',
+                                                            env.value === 'test' && 'bg-muted-foreground'
+                                                        )}
+                                                    />
+                                                    <span>{env.label}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <p className="text-xs text-muted-foreground" data-testid="login-env-url-hint">
+                                {environments.find(e => e.value === selectedEnv)?.url}
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
                             <Label htmlFor="email">Correo electrónico</Label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -160,6 +213,7 @@ const Login = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="pl-10"
+                                    data-testid="login-email-input"
                                 />
                             </div>
                         </div>
@@ -183,6 +237,7 @@ const Login = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="pl-10 pr-10"
+                                    data-testid="login-password-input"
                                 />
                                 <button
                                     type="button"
@@ -216,6 +271,7 @@ const Login = () => {
                             type="submit" 
                             className="w-full bg-primary hover:bg-primary-hover"
                             disabled={isSubmitting}
+                            data-testid="login-submit-button"
                         >
                             {isSubmitting ? (
                                 <>

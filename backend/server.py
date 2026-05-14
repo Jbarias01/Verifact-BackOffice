@@ -10,6 +10,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 import httpx
+from contextvars import ContextVar
 
 
 ROOT_DIR = Path(__file__).parent
@@ -71,11 +72,21 @@ VERIFACT_ENVIRONMENTS = {
 # Default environment
 VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf-test.api.verifact.com.do')
 
+# Context variable to hold the current request's selected environment
+_current_env_ctx: ContextVar[Optional[str]] = ContextVar('current_env', default=None)
+
 def get_verifact_url(ambiente: Optional[str] = None) -> str:
     """Get Verifact API URL based on environment"""
     if ambiente and ambiente in VERIFACT_ENVIRONMENTS:
         return VERIFACT_ENVIRONMENTS[ambiente]
     return VERIFACT_API_URL
+
+def get_current_verifact_url() -> str:
+    """Get Verifact API URL based on the env stored in the current request context.
+
+    Falls back to the default VERIFACT_API_URL when no header is provided.
+    """
+    return get_verifact_url(_current_env_ctx.get())
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -118,9 +129,11 @@ async def proxy_login(login_data: LoginRequest):
     Supports environment selection (test, cert, prod).
     """
     try:
-        # Get the appropriate API URL based on environment
-        api_url = get_verifact_url(login_data.ambiente)
-        logger.info(f"Login request to environment: {login_data.ambiente or 'default'} -> {api_url}")
+        # Get the appropriate API URL based on environment.
+        # Body ambiente takes precedence; otherwise fall back to the
+        # X-Verifact-Env header captured by the middleware.
+        api_url = get_verifact_url(login_data.ambiente) if login_data.ambiente else get_current_verifact_url()
+        logger.info(f"Login request to environment: {login_data.ambiente or _current_env_ctx.get() or 'default'} -> {api_url}")
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
             response = await client.post(
@@ -182,7 +195,7 @@ async def proxy_logout(authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
             response = await client.post(
-                f"{VERIFACT_API_URL}/api/auth/logout",
+                f"{get_current_verifact_url()}/api/auth/logout",
                 headers={
                     "Authorization": authorization,
                     "Accept": "*/*"
@@ -215,7 +228,7 @@ async def proxy_refresh_token(
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/auth/refresh",
+                f"{get_current_verifact_url()}/api/auth/refresh",
                 json={
                     "refreshToken": refresh_data.refreshToken
                 },
@@ -279,8 +292,8 @@ async def proxy_register_tenant(register_data: RegisterTenantRequest):
     Uses /api/tenant/registrar endpoint.
     """
     try:
-        api_url = get_verifact_url(register_data.ambiente)
-        logger.info(f"Registering tenant in environment: {register_data.ambiente or 'default'} -> {api_url}")
+        api_url = get_verifact_url(register_data.ambiente) if register_data.ambiente else get_current_verifact_url()
+        logger.info(f"Registering tenant in environment: {register_data.ambiente or _current_env_ctx.get() or 'default'} -> {api_url}")
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
@@ -372,7 +385,7 @@ async def proxy_register_cliente(register_data: RegisterClienteRequest):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/clientes/registrar",
+                f"{get_current_verifact_url()}/api/clientes/registrar",
                 json={
                     "companyName": register_data.companyName,
                     "rnc": register_data.rnc,
@@ -445,7 +458,7 @@ async def proxy_get_certificados(authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/certificado/listado",
+                f"{get_current_verifact_url()}/api/certificado/listado",
                 headers={
                     "Authorization": authorization,
                     "Accept": "*/*"
@@ -504,7 +517,7 @@ async def proxy_upload_certificado(
             }
             
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/certificado/subir",
+                f"{get_current_verifact_url()}/api/certificado/subir",
                 files=files,
                 data=data,
                 headers={
@@ -580,7 +593,7 @@ async def proxy_upload_factura(
             }
             
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/facturas/facturaselectronicas",
+                f"{get_current_verifact_url()}/api/facturas/facturaselectronicas",
                 files=files,
                 data=data,
                 headers={
@@ -655,7 +668,7 @@ async def proxy_get_facturas(
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/facturas/getfacturaselectronicas",
+                f"{get_current_verifact_url()}/api/facturas/getfacturaselectronicas",
                 params={
                     "fechaInicio": fechaInicio,
                     "fechaFin": fechaFin
@@ -722,7 +735,7 @@ async def proxy_get_usuarios(authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/usuarios",
+                f"{get_current_verifact_url()}/api/usuarios",
                 headers={
                     "Authorization": authorization,
                     "Accept": "text/plain"
@@ -766,7 +779,7 @@ async def proxy_get_usuario(user_id: str, authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/usuarios/{user_id}",
+                f"{get_current_verifact_url()}/api/usuarios/{user_id}",
                 headers={
                     "Authorization": authorization,
                     "Accept": "text/plain"
@@ -812,7 +825,7 @@ async def proxy_create_usuario(user_data: CreateUserRequest, authorization: str 
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/usuarios",
+                f"{get_current_verifact_url()}/api/usuarios",
                 json={
                     "email": user_data.email,
                     "password": user_data.password,
@@ -886,7 +899,7 @@ async def proxy_update_usuario(user_id: str, user_data: UpdateUserRequest, autho
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.put(
-                f"{VERIFACT_API_URL}/api/usuarios/{user_id}",
+                f"{get_current_verifact_url()}/api/usuarios/{user_id}",
                 json=update_data,
                 headers={
                     "Authorization": authorization,
@@ -950,7 +963,7 @@ async def proxy_get_clientes(authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/clientes",
+                f"{get_current_verifact_url()}/api/clientes",
                 headers={
                     "Authorization": authorization,
                     "Accept": "text/plain"
@@ -1002,7 +1015,7 @@ async def proxy_change_password(user_id: str, password_data: ChangePasswordReque
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/usuarios/{user_id}/password",
+                f"{get_current_verifact_url()}/api/usuarios/{user_id}/password",
                 json={
                     "currentPassword": password_data.currentPassword,
                     "newPassword": password_data.newPassword
@@ -1068,7 +1081,7 @@ async def proxy_get_ecf_recibidos():
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/fe/recepcion/api/ecf/recibidos/raw",
+                f"{get_current_verifact_url()}/fe/recepcion/api/ecf/recibidos/raw",
                 headers={
                     "Accept": "text/plain"
                 }
@@ -1104,18 +1117,20 @@ async def proxy_get_ecf_recibidos():
 # =============================================
 
 @api_router.get("/rnc/consultar/{rnc}")
-async def proxy_consultar_rnc(rnc: str, authorization: str = Header(...)):
+async def proxy_consultar_rnc(rnc: str, authorization: Optional[str] = Header(None)):
     """
     Proxy endpoint to get RNC information from Verifact API.
+    Authorization is optional so the registration page (public) can call it
+    to auto-fill the company name.
     """
     try:
+        headers = {"Accept": "text/plain"}
+        if authorization:
+            headers["Authorization"] = authorization
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/rnc/consultar-rnc/{rnc}",
-                headers={
-                    "Authorization": authorization,
-                    "Accept": "text/plain"
-                }
+                f"{get_current_verifact_url()}/api/rnc/consultar-rnc/{rnc}",
+                headers=headers
             )
             
             if response.status_code in [200, 201]:
@@ -1153,7 +1168,7 @@ async def proxy_get_comprobantes_cliente(authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/comprobantes/cliente",
+                f"{get_current_verifact_url()}/api/comprobantes/cliente",
                 headers={
                     "Authorization": authorization,
                     "Accept": "text/plain"
@@ -1219,7 +1234,7 @@ async def proxy_get_ecf_emitidos(
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/ecf/emitidos",
+                f"{get_current_verifact_url()}/api/ecf/emitidos",
                 params=params,
                 headers={
                     "Authorization": authorization,
@@ -1293,7 +1308,7 @@ async def proxy_get_ecf_recibidos_filtros(
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/fe/recepcion/api/ecf/recibidos",
+                f"{get_current_verifact_url()}/fe/recepcion/api/ecf/recibidos",
                 params=params,
                 headers={
                     "Authorization": authorization,
@@ -1346,7 +1361,7 @@ async def proxy_get_sucursales(authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/sucursales",
+                f"{get_current_verifact_url()}/api/sucursales",
                 headers={
                     "Authorization": authorization,
                     "Accept": "*/*"
@@ -1389,7 +1404,7 @@ async def proxy_create_sucursal(request: Request, authorization: str = Header(..
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/sucursales",
+                f"{get_current_verifact_url()}/api/sucursales",
                 json=body,
                 headers={
                     "Authorization": authorization,
@@ -1452,7 +1467,7 @@ async def proxy_get_clientes(authorization: str = Header(...)):
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/clientes",
+                f"{get_current_verifact_url()}/api/clientes",
                 headers={
                     "Authorization": authorization,
                     "Accept": "*/*"
@@ -1495,7 +1510,7 @@ async def proxy_get_cliente_by_id(cliente_id: str, authorization: str = Header(.
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.get(
-                f"{VERIFACT_API_URL}/api/clientes/{cliente_id}",
+                f"{get_current_verifact_url()}/api/clientes/{cliente_id}",
                 headers={
                     "Authorization": authorization,
                     "Accept": "*/*"
@@ -1542,7 +1557,7 @@ async def proxy_create_cliente(request: Request, authorization: str = Header(...
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
-                f"{VERIFACT_API_URL}/api/clientes",
+                f"{get_current_verifact_url()}/api/clientes",
                 json=body,
                 headers={
                     "Authorization": authorization,
@@ -1603,7 +1618,7 @@ async def proxy_update_cliente(cliente_id: str, request: Request, authorization:
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.put(
-                f"{VERIFACT_API_URL}/api/clientes/{cliente_id}",
+                f"{get_current_verifact_url()}/api/clientes/{cliente_id}",
                 json=body,
                 headers={
                     "Authorization": authorization,
@@ -1658,6 +1673,22 @@ async def proxy_update_cliente(cliente_id: str, request: Request, authorization:
 
 # Include the router in the main app
 app.include_router(api_router)
+
+
+@app.middleware("http")
+async def verifact_env_middleware(request: Request, call_next):
+    """Capture X-Verifact-Env header per request and store in context var.
+
+    Proxy endpoints use get_current_verifact_url() to resolve the target backend.
+    """
+    env = request.headers.get("X-Verifact-Env") or request.headers.get("x-verifact-env")
+    token = _current_env_ctx.set(env if env in VERIFACT_ENVIRONMENTS else None)
+    try:
+        response = await call_next(request)
+    finally:
+        _current_env_ctx.reset(token)
+    return response
+
 
 app.add_middleware(
     CORSMiddleware,

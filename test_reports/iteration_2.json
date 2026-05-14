@@ -1,0 +1,68 @@
+{
+  "summary": "Verifact BackOffice env routing + Registration overhaul: comprehensive backend and frontend testing. All critical flows pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/auth/login (no X-Verifact-Env header)",
+        "issue": "When no X-Verifact-Env header is sent, backend defaults to VERIFACT_API_URL env var which is currently 'https://ecf-test.api.verifact.com.do' (TEST). Spec implies the default should be PROD. Non-blocking since the frontend ALWAYS sends the header. Consider changing default in backend/.env or in get_current_verifact_url() fallback to 'prod'."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results_summary": {
+    "backend_tests": {
+      "test_login_succeeds_on_test_env": "PASS - returns success:true with token",
+      "test_login_fails_on_prod_env": "PASS - returns success:false (account does not exist in PROD)",
+      "test_login_fails_on_cert_env": "PASS - returns success:false",
+      "test_login_no_header_uses_backend_default": "PASS - documents that backend default routes to TEST currently",
+      "test_rnc_lookup_test_env": "PASS - JSON response",
+      "test_rnc_lookup_prod_env": "PASS - JSON response"
+    },
+    "frontend_tests": {
+      "T1_login_env_selector_default_Producción": "PASS",
+      "T2_url_hint_visible_prod": "PASS - shows https://ecf.api.verifact.com.do",
+      "T3_select_test_persists_localStorage": "PASS - localStorage['verifact_environment']='test'",
+      "T4_login_test_env_navigates_dashboard": "PASS - admin@axcom.com/Admin123! login succeeded",
+      "T5_header_env_badge_visible_Test": "PASS - data-testid='header-env-badge' shows 'Test'",
+      "T6_dashboard_api_calls_include_X-Verifact-Env_test": "PASS - 9/9 calls",
+      "T7_Sucursales_loads_with_env_header": "PASS - 8/8 calls with env=test",
+      "T7_Clientes_loads_with_env_header": "PASS - 8/8 calls with env=test",
+      "T7_EcfEmitidos_loads_with_env_header": "PASS - 8/8 calls with env=test",
+      "T7_Comprobantes_loads_with_env_header": "PASS - 8/8 calls with env=test",
+      "T8_register_RNC_above_companyName": "PASS - RNC y=446 < CompanyName y=554",
+      "T8_register_env_selector_present_default_Producción": "PASS",
+      "T9_RNC_onBlur_calls_api_rnc_consultar_with_header": "PASS - shows 'RNC no encontrado en la DGII...' warning, companyName stays empty",
+      "T9b_RNC_onEnter_calls_api_rnc_consultar": "PASS",
+      "T10_empty_RNC_click_Consultar_shows_error": "PASS - 'Ingresa un RNC válido (9 dígitos)'",
+      "T11_register_submit_hits_api_tenant_registrar": "PASS - call captured with X-Verifact-Env=test header; registration succeeded (redirect to /login with 'Registro exitoso' success message)"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_env_routing.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "OPTIONAL/MINOR: Reconsider the backend fallback when no X-Verifact-Env header is provided. Currently it defaults to whatever VERIFACT_API_URL env var is set to (TEST). The product spec states default should be 'Producción'. The frontend always sends the header so user-facing behavior is correct, but to be safe set VERIFACT_API_URL=https://ecf.api.verifact.com.do in backend/.env or change fallback in get_verifact_url()."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 1710 lines — exceeds the 700-line threshold from review guidelines. Recommend splitting per-resource proxy routes (auth, clientes, sucursales, facturas, ecf, rnc, comprobantes, certificados) into separate routers under /app/backend/routers/.",
+    "Backend uses httpx.AsyncClient(verify=False, ...) for all proxy calls — acceptable for self-signed DGII certs but should be documented as intentional.",
+    "Frontend AuthContext lookupRnc() success detection compares free-form strings ('No encontrado', 'Error', 'Error al consultar') — fragile. Prefer checking a structured field like data.status === 'ACTIVO' to determine validity."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_env_routing.py (new)",
+    "/app/test_reports/pytest/pytest_results.xml (generated)",
+    "/app/test_reports/iteration_2.json"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (16/16 sub-tests)"},
+  "test_credentials": {"email": "admin@axcom.com", "password": "Admin123!", "env": "test"},
+  "seed_data_creation": "Test user 'test_user_e2e@example.com' / company TEST_Empresa SRL was registered via the registration flow in the TEST environment as part of T11. Backend returned success.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Environment selector + X-Verifact-Env header propagation works end-to-end. Login on TEST env succeeds, fails on PROD/CERT as expected. Register page has RNC first, with both onBlur and onKeyDown=Enter triggering the lookup, plus an explicit Consultar button. Tenant submit hits /api/tenant/registrar with the env header. Header env badge reflects selected env after login. No outstanding bugs. Only minor consideration: backend default env (when no header) is TEST not PROD, but irrelevant to UI flow."
+}

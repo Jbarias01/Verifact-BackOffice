@@ -2,13 +2,20 @@ import React, { useState } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { 
     Eye, EyeOff, Mail, Lock, User, Building2, Phone, MapPin, 
-    FileCheck, ArrowRight, ArrowLeft, Check, Loader2, Hash
+    FileCheck, ArrowRight, ArrowLeft, Check, Loader2, Hash, Globe, Search
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 const steps = [
@@ -19,7 +26,7 @@ const steps = [
 
 const Register = () => {
     const navigate = useNavigate();
-    const { register, isAuthenticated } = useAuth();
+    const { register, isAuthenticated, environment, environments, setEnvironment, consultRNC } = useAuth();
     
     const [currentStep, setCurrentStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +34,10 @@ const Register = () => {
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedEnv, setSelectedEnv] = useState(environment);
+    const [isLookingUpRnc, setIsLookingUpRnc] = useState(false);
+    const [rncLookupMessage, setRncLookupMessage] = useState('');
+    const [rncLookupSuccess, setRncLookupSuccess] = useState(false);
 
     // Company Data
     const [companyData, setCompanyData] = useState({
@@ -61,6 +72,9 @@ const Register = () => {
     const handleCompanyChange = (field, value) => {
         if (field === 'rnc') {
             value = formatRNC(value);
+            // Reset RNC lookup state when RNC changes
+            setRncLookupMessage('');
+            setRncLookupSuccess(false);
         }
         setCompanyData(prev => ({ ...prev, [field]: value }));
     };
@@ -69,8 +83,58 @@ const Register = () => {
         setUserData(prev => ({ ...prev, [field]: value }));
     };
 
+    const handleEnvChange = (value) => {
+        setSelectedEnv(value);
+        setEnvironment(value);
+        // Reset lookup so user re-validates against the new env
+        setRncLookupMessage('');
+        setRncLookupSuccess(false);
+    };
+
+    const lookupRnc = async () => {
+        const cleanRnc = (companyData.rnc || '').replace(/\D/g, '');
+        if (cleanRnc.length < 9) {
+            setRncLookupMessage('Ingresa un RNC válido (9 dígitos)');
+            setRncLookupSuccess(false);
+            return;
+        }
+        setIsLookingUpRnc(true);
+        setRncLookupMessage('');
+        setRncLookupSuccess(false);
+        try {
+            const result = await consultRNC(cleanRnc, selectedEnv);
+            if (result.success && result.data) {
+                const apiName = result.data.name || result.data.razonSocial || result.data.nombre;
+                const status = result.data.status || result.data.estado;
+                if (apiName && status !== 'DESCONOCIDO' && status !== 'ERROR' && apiName !== 'No encontrado' && apiName !== 'Error' && apiName !== 'Error al consultar') {
+                    setCompanyData(prev => ({ ...prev, companyName: apiName }));
+                    setRncLookupMessage(`RNC válido. Empresa: ${apiName}`);
+                    setRncLookupSuccess(true);
+                } else {
+                    setRncLookupMessage('RNC no encontrado en la DGII. Puedes ingresar el nombre manualmente.');
+                    setRncLookupSuccess(false);
+                }
+            } else {
+                setRncLookupMessage(result.error || 'No se pudo consultar el RNC.');
+                setRncLookupSuccess(false);
+            }
+        } catch (err) {
+            setRncLookupMessage('Error al consultar el RNC.');
+            setRncLookupSuccess(false);
+        } finally {
+            setIsLookingUpRnc(false);
+        }
+    };
+
+    const handleRncKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            lookupRnc();
+        }
+    };
+
     const validateStep1 = () => {
-        if (!companyData.companyName || !companyData.rnc || !companyData.companyEmail) {
+        if (!companyData.rnc || !companyData.companyName || !companyData.companyEmail) {
             setError('Por favor complete todos los campos requeridos');
             return false;
         }
@@ -123,7 +187,7 @@ const Register = () => {
         }
 
         setIsSubmitting(true);
-        const result = await register(companyData, userData);
+        const result = await register(companyData, userData, selectedEnv);
         
         if (result.success) {
             // Registration successful - redirect to login
@@ -183,13 +247,13 @@ const Register = () => {
                                 <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
                                     <Check className="h-4 w-4 text-accent" />
                                 </div>
-                                <span>Cumplimiento automático DGII</span>
+                                <span>Auto-completado por RNC desde la DGII</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
                                     <Check className="h-4 w-4 text-accent" />
                                 </div>
-                                <span>Soporte técnico especializado</span>
+                                <span>Cumplimiento automático DGII</span>
                             </div>
                         </div>
                     </div>
@@ -259,14 +323,14 @@ const Register = () => {
                                 {currentStep === 3 && 'Confirma tu registro'}
                             </h2>
                             <p className="text-muted-foreground mt-2">
-                                {currentStep === 1 && 'Ingresa la información fiscal de tu empresa'}
+                                {currentStep === 1 && 'Empieza con tu RNC y completaremos los datos por ti'}
                                 {currentStep === 2 && 'Configura tu cuenta de administrador'}
                                 {currentStep === 3 && 'Revisa los datos antes de continuar'}
                             </p>
                         </div>
 
                         {error && (
-                            <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                            <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm" data-testid="register-error">
                                 {error}
                             </div>
                         )}
@@ -275,6 +339,94 @@ const Register = () => {
                             {/* Step 1: Company Data */}
                             {currentStep === 1 && (
                                 <div className="space-y-4 animate-fade-in">
+                                    {/* Environment Selector */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="reg-environment">Ambiente de Registro</Label>
+                                        <div className="relative">
+                                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
+                                            <Select value={selectedEnv} onValueChange={handleEnvChange}>
+                                                <SelectTrigger
+                                                    id="reg-environment"
+                                                    className="pl-10"
+                                                    data-testid="register-environment-select"
+                                                >
+                                                    <SelectValue placeholder="Selecciona un ambiente" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {environments.map((env) => (
+                                                        <SelectItem
+                                                            key={env.value}
+                                                            value={env.value}
+                                                            data-testid={`register-env-option-${env.value}`}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <span
+                                                                    className={cn(
+                                                                        "w-2 h-2 rounded-full",
+                                                                        env.value === 'prod' && 'bg-success',
+                                                                        env.value === 'cert' && 'bg-warning',
+                                                                        env.value === 'test' && 'bg-muted-foreground'
+                                                                    )}
+                                                                />
+                                                                <span>{env.label}</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    {/* RNC first */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente) *</Label>
+                                        <div className="relative flex gap-2">
+                                            <div className="relative flex-1">
+                                                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                                <Input
+                                                    id="rnc"
+                                                    placeholder="XXX-XXXXX-X"
+                                                    value={companyData.rnc}
+                                                    onChange={(e) => handleCompanyChange('rnc', e.target.value)}
+                                                    onBlur={lookupRnc}
+                                                    onKeyDown={handleRncKeyDown}
+                                                    className="pl-10"
+                                                    maxLength={11}
+                                                    data-testid="register-rnc-input"
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={lookupRnc}
+                                                disabled={isLookingUpRnc}
+                                                data-testid="register-rnc-lookup-button"
+                                            >
+                                                {isLookingUpRnc ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Search className="h-4 w-4" />
+                                                )}
+                                                <span className="ml-2 hidden sm:inline">Consultar</span>
+                                            </Button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Formato: XXX-XXXXX-X. Pulsa Enter o sal del campo para auto-completar el nombre.
+                                        </p>
+                                        {rncLookupMessage && (
+                                            <p
+                                                className={cn(
+                                                    "text-xs flex items-center gap-1",
+                                                    rncLookupSuccess ? "text-success" : "text-destructive"
+                                                )}
+                                                data-testid="register-rnc-lookup-message"
+                                            >
+                                                {rncLookupSuccess && <Check className="h-3 w-3" />}
+                                                {rncLookupMessage}
+                                            </p>
+                                        )}
+                                    </div>
+
                                     <div className="space-y-2">
                                         <Label htmlFor="companyName">Nombre de la Empresa *</Label>
                                         <div className="relative">
@@ -285,26 +437,9 @@ const Register = () => {
                                                 value={companyData.companyName}
                                                 onChange={(e) => handleCompanyChange('companyName', e.target.value)}
                                                 className="pl-10"
+                                                data-testid="register-company-name-input"
                                             />
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente) *</Label>
-                                        <div className="relative">
-                                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                            <Input
-                                                id="rnc"
-                                                placeholder="XXX-XXXXX-X"
-                                                value={companyData.rnc}
-                                                onChange={(e) => handleCompanyChange('rnc', e.target.value)}
-                                                className="pl-10"
-                                                maxLength={11}
-                                            />
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Formato: XXX-XXXXX-X (ej: 101-25896-3)
-                                        </p>
                                     </div>
 
                                     <div className="space-y-2">
@@ -318,6 +453,7 @@ const Register = () => {
                                                 value={companyData.companyEmail}
                                                 onChange={(e) => handleCompanyChange('companyEmail', e.target.value)}
                                                 className="pl-10"
+                                                data-testid="register-company-email-input"
                                             />
                                         </div>
                                     </div>
@@ -332,6 +468,7 @@ const Register = () => {
                                                 value={companyData.phone}
                                                 onChange={(e) => handleCompanyChange('phone', e.target.value)}
                                                 className="pl-10"
+                                                data-testid="register-phone-input"
                                             />
                                         </div>
                                     </div>
@@ -346,6 +483,7 @@ const Register = () => {
                                                 value={companyData.address}
                                                 onChange={(e) => handleCompanyChange('address', e.target.value)}
                                                 className="pl-10"
+                                                data-testid="register-address-input"
                                             />
                                         </div>
                                     </div>
@@ -365,6 +503,7 @@ const Register = () => {
                                                 value={userData.name}
                                                 onChange={(e) => handleUserChange('name', e.target.value)}
                                                 className="pl-10"
+                                                data-testid="register-user-name-input"
                                             />
                                         </div>
                                     </div>
@@ -380,6 +519,7 @@ const Register = () => {
                                                 value={userData.email}
                                                 onChange={(e) => handleUserChange('email', e.target.value)}
                                                 className="pl-10"
+                                                data-testid="register-user-email-input"
                                             />
                                         </div>
                                     </div>
@@ -395,6 +535,7 @@ const Register = () => {
                                                 value={userData.password}
                                                 onChange={(e) => handleUserChange('password', e.target.value)}
                                                 className="pl-10 pr-10"
+                                                data-testid="register-password-input"
                                             />
                                             <button
                                                 type="button"
@@ -420,6 +561,7 @@ const Register = () => {
                                                 value={userData.confirmPassword}
                                                 onChange={(e) => handleUserChange('confirmPassword', e.target.value)}
                                                 className="pl-10 pr-10"
+                                                data-testid="register-confirm-password-input"
                                             />
                                             <button
                                                 type="button"
@@ -438,17 +580,32 @@ const Register = () => {
                                 <div className="space-y-6 animate-fade-in">
                                     <div className="rounded-xl border bg-secondary/30 p-6">
                                         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                                            <Globe className="h-5 w-5 text-primary" />
+                                            Ambiente
+                                        </h3>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Destino:</span>
+                                                <span className="font-medium">
+                                                    {environments.find(e => e.value === selectedEnv)?.label}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border bg-secondary/30 p-6">
+                                        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                                             <Building2 className="h-5 w-5 text-primary" />
                                             Datos de la Empresa
                                         </h3>
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Nombre:</span>
-                                                <span className="font-medium">{companyData.companyName}</span>
-                                            </div>
-                                            <div className="flex justify-between">
                                                 <span className="text-muted-foreground">RNC:</span>
                                                 <span className="font-medium">{companyData.rnc}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Nombre:</span>
+                                                <span className="font-medium">{companyData.companyName}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-muted-foreground">Correo:</span>
@@ -491,6 +648,7 @@ const Register = () => {
                                             id="terms" 
                                             checked={acceptTerms}
                                             onCheckedChange={setAcceptTerms}
+                                            data-testid="register-terms-checkbox"
                                         />
                                         <Label 
                                             htmlFor="terms" 
@@ -518,6 +676,7 @@ const Register = () => {
                                         variant="outline" 
                                         onClick={handleBack}
                                         className="flex-1"
+                                        data-testid="register-back-button"
                                     >
                                         <ArrowLeft className="mr-2 h-4 w-4" />
                                         Atrás
@@ -529,6 +688,7 @@ const Register = () => {
                                         type="button" 
                                         onClick={handleNext}
                                         className="flex-1 bg-primary hover:bg-primary-hover"
+                                        data-testid="register-next-button"
                                     >
                                         Continuar
                                         <ArrowRight className="ml-2 h-4 w-4" />
@@ -538,6 +698,7 @@ const Register = () => {
                                         type="submit"
                                         className="flex-1 bg-primary hover:bg-primary-hover"
                                         disabled={isSubmitting || !acceptTerms}
+                                        data-testid="register-submit-button"
                                     >
                                         {isSubmitting ? (
                                             <>
