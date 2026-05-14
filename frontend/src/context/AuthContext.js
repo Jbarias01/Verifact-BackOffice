@@ -137,17 +137,22 @@ export const AuthProvider = ({ children }) => {
                 
                 // Update user data if provided
                 if (data.usuario) {
+                    const sucursalObj = data.usuario.sucursal || null;
+                    const tenantObj = data.usuario.tenant || null;
                     const userData = {
                         id: data.usuario.id,
                         email: data.usuario.email,
                         name: data.usuario.nombre,
                         role: data.usuario.rol,
-                        avatar: null
+                        avatar: null,
+                        sucursal: sucursalObj,
+                        sucursalId: data.usuario.sucursalId || sucursalObj?.id || null,
+                        tenantId: data.usuario.tenantId || tenantObj?.id || null
                     };
                     const companyData = {
-                        id: data.usuario.clienteId,
-                        name: data.usuario.clienteNombre,
-                        rnc: data.usuario.clienteRNC,
+                        id: data.usuario.tenantId || tenantObj?.id || data.usuario.clienteId,
+                        name: tenantObj?.nombre || data.usuario.clienteNombre || '',
+                        rnc: tenantObj?.rnc || data.usuario.clienteRNC || '',
                         address: '',
                         phone: '',
                         email: data.usuario.email
@@ -277,21 +282,25 @@ export const AuthProvider = ({ children }) => {
             const data = response.data;
 
             if (data.success) {
-                // Extract user data from response
+                // Extract user data from response (handles both new and legacy shapes)
+                const sucursalObj = data.usuario.sucursal || null;
+                const tenantObj = data.usuario.tenant || null;
                 const userData = {
                     id: data.usuario.id,
                     email: data.usuario.email,
                     name: data.usuario.nombre,
                     role: data.usuario.rol,
                     avatar: null,
-                    sucursal: data.usuario.sucursal || null
+                    sucursal: sucursalObj,
+                    sucursalId: data.usuario.sucursalId || sucursalObj?.id || null,
+                    tenantId: data.usuario.tenantId || tenantObj?.id || null
                 };
                 
                 // Extract company data from response
                 const companyData = {
-                    id: data.usuario.tenantId,
-                    name: data.usuario.clienteNombre,
-                    rnc: data.usuario.clienteRNC,
+                    id: data.usuario.tenantId || tenantObj?.id,
+                    name: tenantObj?.nombre || data.usuario.clienteNombre || '',
+                    rnc: tenantObj?.rnc || data.usuario.clienteRNC || '',
                     address: '',
                     phone: '',
                     email: data.usuario.email
