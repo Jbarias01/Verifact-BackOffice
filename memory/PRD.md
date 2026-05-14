@@ -6,10 +6,18 @@
 ## Características Implementadas
 
 ### 1. Autenticación y Sesión
-- **Login**: Página de inicio de sesión conectada al API real de Verifact
+- **Selector de Ambiente en Login (NUEVO)**: Dropdown con tres ambientes:
+  - Producción (default): https://ecf.api.verifact.com.do
+  - Certificación: https://ecf-cert.api.verifact.com.do
+  - Test/Desarrollo: https://ecf-test.api.verifact.com.do
+  - La selección se persiste en localStorage y se inyecta como header `X-Verifact-Env` en TODAS las peticiones (vía axios interceptor).
+  - Badge del ambiente activo visible en el header tras el login.
+- **Login**: Página de inicio de sesión conectada al API real de Verifact con ambiente dinámico
 - **Logout**: Cierre de sesión con invalidación del token
 - **Refresh Token**: Renovación automática del JWT antes de expirar (5 min antes)
-- **Registro de Empresa**: Wizard de 3 pasos para registrar empresas (endpoint público)
+- **Registro de Empresa (REDISEÑADO)**: Wizard de 3 pasos.
+  - Paso 1: Selector de ambiente, **RNC como primer campo** con auto-consulta (onBlur o Enter) que llena el "Nombre de la Empresa" desde el endpoint `/api/rnc/consultar/{rnc}`.
+  - Submit envía a `/api/tenant/registrar` con el header `X-Verifact-Env`.
 - Formato RNC validado: XXX-XXXXX-X
 
 ### 2. Dashboard Principal (ACTUALIZADO - DATOS REALES CON GRÁFICOS)
@@ -226,5 +234,11 @@
 - Password: Admin123!
 
 ## Última Actualización
-- Fecha: 24 de marzo de 2026
-- Tarea completada: Módulo de Clientes (CRUD completo: listar, crear, editar, ver detalle, configuración de crédito)
+- Fecha: 25 de febrero de 2026
+- Tarea completada: 
+  - Selector de Ambiente (Test/Cert/Prod) en Login con persistencia en localStorage e inyección de header `X-Verifact-Env` en TODAS las peticiones vía axios interceptor.
+  - Routing dinámico en el proxy FastAPI mediante middleware + ContextVar (lee `X-Verifact-Env`).
+  - Rediseño del Registro: RNC como primer campo con auto-consulta DGII (onBlur/Enter) y submit a `/api/tenant/registrar`.
+  - Badge del ambiente activo en el header tras login.
+  - Ambiente por defecto: Producción.
+  - Testing: 22/22 sub-tests PASS (6 backend + 16 frontend) — iteration_2.json.

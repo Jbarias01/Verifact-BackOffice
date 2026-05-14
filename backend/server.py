@@ -69,8 +69,8 @@ VERIFACT_ENVIRONMENTS = {
     'prod': 'https://ecf.api.verifact.com.do'
 }
 
-# Default environment
-VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf-test.api.verifact.com.do')
+# Default environment (when no X-Verifact-Env header is provided)
+VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf.api.verifact.com.do')
 
 # Context variable to hold the current request's selected environment
 _current_env_ctx: ContextVar[Optional[str]] = ContextVar('current_env', default=None)
