@@ -42,6 +42,7 @@ class StatusCheckCreate(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+    ambiente: Optional[str] = None  # test, cert, prod
 
 class UsuarioResponse(BaseModel):
     id: str
@@ -60,8 +61,21 @@ class LoginResponse(BaseModel):
     usuario: Optional[UsuarioResponse] = None
     message: Optional[str] = None
 
-# Verifact API Base URL
+# Verifact API Base URLs by environment
+VERIFACT_ENVIRONMENTS = {
+    'test': 'https://ecf-test.api.verifact.com.do',
+    'cert': 'https://ecf-cert.api.verifact.com.do',
+    'prod': 'https://ecf.api.verifact.com.do'
+}
+
+# Default environment
 VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf-test.api.verifact.com.do')
+
+def get_verifact_url(ambiente: Optional[str] = None) -> str:
+    """Get Verifact API URL based on environment"""
+    if ambiente and ambiente in VERIFACT_ENVIRONMENTS:
+        return VERIFACT_ENVIRONMENTS[ambiente]
+    return VERIFACT_API_URL
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -101,11 +115,16 @@ async def proxy_login(login_data: LoginRequest):
     """
     Proxy endpoint for Verifact login API.
     This bypasses CORS and SSL issues by making the request server-side.
+    Supports environment selection (test, cert, prod).
     """
     try:
+        # Get the appropriate API URL based on environment
+        api_url = get_verifact_url(login_data.ambiente)
+        logger.info(f"Login request to environment: {login_data.ambiente or 'default'} -> {api_url}")
+        
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
             response = await client.post(
-                f"{VERIFACT_API_URL}/api/auth/login",
+                f"{api_url}/api/auth/login",
                 json={
                     "email": login_data.email,
                     "password": login_data.password
@@ -117,7 +136,10 @@ async def proxy_login(login_data: LoginRequest):
             
             # Return the response from Verifact API
             if response.status_code == 200:
-                return response.json()
+                data = response.json()
+                # Add the ambiente to the response so frontend can store it
+                data['ambiente'] = login_data.ambiente or 'test'
+                return data
             else:
                 # Try to get error message from response
                 try:
@@ -235,9 +257,102 @@ async def proxy_refresh_token(
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 # =============================================
-# CLIENTES (REGISTRO) API PROXY ENDPOINTS
+# TENANT (REGISTRO) API PROXY ENDPOINTS
 # =============================================
 
+class RegisterTenantRequest(BaseModel):
+    companyName: str
+    rnc: str
+    companyEmail: str
+    phone: Optional[str] = None
+    fiscalAddress: Optional[str] = None
+    userFullName: str
+    userEmail: str
+    userPassword: str
+    ambiente: Optional[str] = None  # test, cert, prod
+
+@api_router.post("/tenant/registrar")
+async def proxy_register_tenant(register_data: RegisterTenantRequest):
+    """
+    Proxy endpoint to register a new tenant/company in Verifact API.
+    This endpoint is public and does not require authentication.
+    Uses /api/tenant/registrar endpoint.
+    """
+    try:
+        api_url = get_verifact_url(register_data.ambiente)
+        logger.info(f"Registering tenant in environment: {register_data.ambiente or 'default'} -> {api_url}")
+        
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{api_url}/api/tenant/registrar",
+                json={
+                    "companyName": register_data.companyName,
+                    "rnc": register_data.rnc,
+                    "companyEmail": register_data.companyEmail,
+                    "phone": register_data.phone or "",
+                    "fiscalAddress": register_data.fiscalAddress or "",
+                    "userFullName": register_data.userFullName,
+                    "userEmail": register_data.userEmail,
+                    "userPassword": register_data.userPassword
+                },
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "*/*"
+                }
+            )
+            
+            if response.status_code in [200, 201]:
+                try:
+                    result = response.json()
+                    return {
+                        "success": True,
+                        "clienteId": result.get("clienteId") or result.get("tenantId"),
+                        "clienteRNC": result.get("clienteRNC") or result.get("rnc"),
+                        "usuarioId": result.get("usuarioId"),
+                        "usuarioEmail": result.get("usuarioEmail") or result.get("email"),
+                        "message": "Empresa registrada exitosamente"
+                    }
+                except:
+                    return {
+                        "success": True,
+                        "message": "Empresa registrada exitosamente"
+                    }
+            elif response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("error") or error_data.get("message") or error_data.get("title") or "Datos de registro inválidos"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": "Datos de registro inválidos"
+                    }
+            else:
+                try:
+                    error_data = response.json()
+                    return {
+                        "success": False,
+                        "message": error_data.get("error") or error_data.get("message") or f"Error: {response.status_code}"
+                    }
+                except:
+                    return {
+                        "success": False,
+                        "message": f"Error del servidor: {response.status_code}"
+                    }
+                    
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except Exception as e:
+        logger.error(f"Error registering tenant: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+# Legacy endpoint - keep for backwards compatibility
 class RegisterClienteRequest(BaseModel):
     companyName: str
     rnc: str
@@ -251,7 +366,7 @@ class RegisterClienteRequest(BaseModel):
 @api_router.post("/clientes/registrar")
 async def proxy_register_cliente(register_data: RegisterClienteRequest):
     """
-    Proxy endpoint to register a new client/company in Verifact API.
+    Legacy proxy endpoint to register a new client/company in Verifact API.
     This endpoint is public and does not require authentication.
     """
     try:
