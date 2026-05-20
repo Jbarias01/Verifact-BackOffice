@@ -2,20 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { 
     Eye, EyeOff, Mail, Lock, User, Building2, Phone, MapPin, 
-    FileCheck, ArrowRight, ArrowLeft, Check, Loader2, Hash, Globe, Search
+    FileCheck, ArrowRight, ArrowLeft, Check, Loader2, Hash, Search
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 const steps = [
@@ -26,7 +19,7 @@ const steps = [
 
 const Register = () => {
     const navigate = useNavigate();
-    const { register, isAuthenticated, environment, environments, setEnvironment, consultRNC, envLocked } = useAuth();
+    const { register, isAuthenticated, consultRNC } = useAuth();
     
     const [currentStep, setCurrentStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +27,6 @@ const Register = () => {
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedEnv, setSelectedEnv] = useState(environment);
     const [isLookingUpRnc, setIsLookingUpRnc] = useState(false);
     const [rncLookupMessage, setRncLookupMessage] = useState('');
     const [rncLookupSuccess, setRncLookupSuccess] = useState(false);
@@ -83,14 +75,6 @@ const Register = () => {
         setUserData(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleEnvChange = (value) => {
-        setSelectedEnv(value);
-        setEnvironment(value);
-        // Reset lookup so user re-validates against the new env
-        setRncLookupMessage('');
-        setRncLookupSuccess(false);
-    };
-
     const lookupRnc = async () => {
         const cleanRnc = (companyData.rnc || '').replace(/\D/g, '');
         if (cleanRnc.length < 9) {
@@ -102,7 +86,7 @@ const Register = () => {
         setRncLookupMessage('');
         setRncLookupSuccess(false);
         try {
-            const result = await consultRNC(cleanRnc, selectedEnv);
+            const result = await consultRNC(cleanRnc);
             if (result.success && result.data) {
                 const apiName = result.data.name || result.data.razonSocial || result.data.nombre;
                 const status = result.data.status || result.data.estado;
@@ -187,7 +171,7 @@ const Register = () => {
         }
 
         setIsSubmitting(true);
-        const result = await register(companyData, userData, selectedEnv);
+        const result = await register(companyData, userData, acceptTerms);
         
         if (result.success) {
             // Registration successful - redirect to login
@@ -339,50 +323,6 @@ const Register = () => {
                             {/* Step 1: Company Data */}
                             {currentStep === 1 && (
                                 <div className="space-y-4 animate-fade-in">
-                                    {/* Environment Selector */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="reg-environment">Ambiente de Registro</Label>
-                                        <div className="relative">
-                                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
-                                            <Select value={selectedEnv} onValueChange={handleEnvChange} disabled={envLocked}>
-                                                <SelectTrigger
-                                                    id="reg-environment"
-                                                    className="pl-10"
-                                                    data-testid="register-environment-select"
-                                                    disabled={envLocked}
-                                                >
-                                                    <SelectValue placeholder="Selecciona un ambiente" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {environments.map((env) => (
-                                                        <SelectItem
-                                                            key={env.value}
-                                                            value={env.value}
-                                                            data-testid={`register-env-option-${env.value}`}
-                                                        >
-                                                            <div className="flex items-center gap-2">
-                                                                <span
-                                                                    className={cn(
-                                                                        "w-2 h-2 rounded-full",
-                                                                        env.value === 'prod' && 'bg-success',
-                                                                        env.value === 'cert' && 'bg-warning',
-                                                                        env.value === 'test' && 'bg-muted-foreground'
-                                                                    )}
-                                                                />
-                                                                <span>{env.label}</span>
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        {envLocked && (
-                                            <p className="text-xs text-muted-foreground italic">
-                                                Ambiente fijado temporalmente en Test/Desarrollo.
-                                            </p>
-                                        )}
-                                    </div>
-
                                     {/* RNC first */}
                                     <div className="space-y-2">
                                         <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente) *</Label>
@@ -584,21 +524,6 @@ const Register = () => {
                             {/* Step 3: Confirmation */}
                             {currentStep === 3 && (
                                 <div className="space-y-6 animate-fade-in">
-                                    <div className="rounded-xl border bg-secondary/30 p-6">
-                                        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                            <Globe className="h-5 w-5 text-primary" />
-                                            Ambiente
-                                        </h3>
-                                        <div className="space-y-2 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Destino:</span>
-                                                <span className="font-medium">
-                                                    {environments.find(e => e.value === selectedEnv)?.label}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <div className="rounded-xl border bg-secondary/30 p-6">
                                         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                                             <Building2 className="h-5 w-5 text-primary" />

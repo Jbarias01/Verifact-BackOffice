@@ -234,11 +234,13 @@
 - Password: Admin123!
 
 ## Última Actualización
-- Fecha: 25 de febrero de 2026
-- Tarea completada: 
-  - Selector de Ambiente (Test/Cert/Prod) en Login con persistencia en localStorage e inyección de header `X-Verifact-Env` en TODAS las peticiones vía axios interceptor.
-  - Routing dinámico en el proxy FastAPI mediante middleware + ContextVar (lee `X-Verifact-Env`).
-  - Rediseño del Registro: RNC como primer campo con auto-consulta DGII (onBlur/Enter) y submit a `/api/tenant/registrar`.
-  - Badge del ambiente activo en el header tras login.
-  - Ambiente por defecto: Producción.
-  - Testing: 22/22 sub-tests PASS (6 backend + 16 frontend) — iteration_2.json.
+- Fecha: 20 de mayo de 2026
+- Cambios:
+  - **Selector de ambiente descartado** (Test/Cert/Prod). El backend proxy ahora apunta SIEMPRE a `https://ecf-test.api.verifact.com.do` (configurable vía `VERIFACT_API_URL` en `backend/.env`).
+  - Eliminado: middleware `X-Verifact-Env`, ContextVar, badge en header, dropdowns en Login/Register.
+  - **Nuevo DTO de Tenant** en `/api/tenant/registrar`: `rnc`, `companyName`, `commercialName`, `companyEmail`, `phone`, `fiscalAddress`, `userFullName`, `userEmail`, `userPassword`, `acceptTerms` (`planCode` reservado pero no se envía actualmente; `commercialName` no se muestra en el form, se envía vacío).
+  - `AuthContext.register()` recibe `acceptTerms` como tercer parámetro y lo propaga al backend.
+  - Mapeo de respuesta del login compatible con la nueva forma anidada (`usuario.tenant.nombre`, `usuario.tenant.rnc`, `usuario.sucursal.*`).
+
+## Bloqueante Externo Conocido
+- El API externo `https://ecf-test.api.verifact.com.do` responde 404 en TODOS los endpoints (`/api/auth/login`, `/swagger`, etc.) al momento del último despliegue. El código local está correcto; verificar disponibilidad/estado con el equipo del backend Verifact.

@@ -10,7 +10,6 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 import httpx
-from contextvars import ContextVar
 
 
 ROOT_DIR = Path(__file__).parent
@@ -43,7 +42,6 @@ class StatusCheckCreate(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
-    ambiente: Optional[str] = None  # test, cert, prod
 
 class UsuarioResponse(BaseModel):
     id: str
@@ -62,31 +60,13 @@ class LoginResponse(BaseModel):
     usuario: Optional[UsuarioResponse] = None
     message: Optional[str] = None
 
-# Verifact API Base URLs by environment
-VERIFACT_ENVIRONMENTS = {
-    'test': 'https://ecf-test.api.verifact.com.do',
-    'cert': 'https://ecf-cert.api.verifact.com.do',
-    'prod': 'https://ecf.api.verifact.com.do'
-}
+# Verifact API Base URL (single environment — ecf-test by default)
+VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf-test.api.verifact.com.do')
 
-# Default environment (when no X-Verifact-Env header is provided)
-VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf.api.verifact.com.do')
-
-# Context variable to hold the current request's selected environment
-_current_env_ctx: ContextVar[Optional[str]] = ContextVar('current_env', default=None)
-
-def get_verifact_url(ambiente: Optional[str] = None) -> str:
-    """Get Verifact API URL based on environment"""
-    if ambiente and ambiente in VERIFACT_ENVIRONMENTS:
-        return VERIFACT_ENVIRONMENTS[ambiente]
-    return VERIFACT_API_URL
 
 def get_current_verifact_url() -> str:
-    """Get Verifact API URL based on the env stored in the current request context.
-
-    Falls back to the default VERIFACT_API_URL when no header is provided.
-    """
-    return get_verifact_url(_current_env_ctx.get())
+    """Return the configured Verifact API base URL."""
+    return VERIFACT_API_URL
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -129,11 +109,8 @@ async def proxy_login(login_data: LoginRequest):
     Supports environment selection (test, cert, prod).
     """
     try:
-        # Get the appropriate API URL based on environment.
-        # Body ambiente takes precedence; otherwise fall back to the
-        # X-Verifact-Env header captured by the middleware.
-        api_url = get_verifact_url(login_data.ambiente) if login_data.ambiente else get_current_verifact_url()
-        logger.info(f"Login request to environment: {login_data.ambiente or _current_env_ctx.get() or 'default'} -> {api_url}")
+        api_url = get_current_verifact_url()
+        logger.info(f"Login request to {api_url}")
         
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
             response = await client.post(
@@ -149,10 +126,7 @@ async def proxy_login(login_data: LoginRequest):
             
             # Return the response from Verifact API
             if response.status_code == 200:
-                data = response.json()
-                # Add the ambiente to the response so frontend can store it
-                data['ambiente'] = login_data.ambiente or 'test'
-                return data
+                return response.json()
             else:
                 # Try to get error message from response
                 try:
@@ -274,15 +248,17 @@ async def proxy_refresh_token(
 # =============================================
 
 class RegisterTenantRequest(BaseModel):
-    companyName: str
     rnc: str
+    companyName: str
+    commercialName: Optional[str] = ""
     companyEmail: str
     phone: Optional[str] = None
     fiscalAddress: Optional[str] = None
     userFullName: str
     userEmail: str
     userPassword: str
-    ambiente: Optional[str] = None  # test, cert, prod
+    acceptTerms: bool = True
+    planCode: Optional[str] = None
 
 @api_router.post("/tenant/registrar")
 async def proxy_register_tenant(register_data: RegisterTenantRequest):
@@ -292,22 +268,28 @@ async def proxy_register_tenant(register_data: RegisterTenantRequest):
     Uses /api/tenant/registrar endpoint.
     """
     try:
-        api_url = get_verifact_url(register_data.ambiente) if register_data.ambiente else get_current_verifact_url()
-        logger.info(f"Registering tenant in environment: {register_data.ambiente or _current_env_ctx.get() or 'default'} -> {api_url}")
+        api_url = get_current_verifact_url()
+        logger.info(f"Registering tenant at {api_url}")
         
+        payload = {
+            "rnc": register_data.rnc,
+            "companyName": register_data.companyName,
+            "commercialName": register_data.commercialName or "",
+            "companyEmail": register_data.companyEmail,
+            "phone": register_data.phone or "",
+            "fiscalAddress": register_data.fiscalAddress or "",
+            "userFullName": register_data.userFullName,
+            "userEmail": register_data.userEmail,
+            "userPassword": register_data.userPassword,
+            "acceptTerms": bool(register_data.acceptTerms),
+        }
+        if register_data.planCode:
+            payload["planCode"] = register_data.planCode
+
         async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
             response = await http_client.post(
                 f"{api_url}/api/tenant/registrar",
-                json={
-                    "companyName": register_data.companyName,
-                    "rnc": register_data.rnc,
-                    "companyEmail": register_data.companyEmail,
-                    "phone": register_data.phone or "",
-                    "fiscalAddress": register_data.fiscalAddress or "",
-                    "userFullName": register_data.userFullName,
-                    "userEmail": register_data.userEmail,
-                    "userPassword": register_data.userPassword
-                },
+                json=payload,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "*/*"
@@ -1673,21 +1655,6 @@ async def proxy_update_cliente(cliente_id: str, request: Request, authorization:
 
 # Include the router in the main app
 app.include_router(api_router)
-
-
-@app.middleware("http")
-async def verifact_env_middleware(request: Request, call_next):
-    """Capture X-Verifact-Env header per request and store in context var.
-
-    Proxy endpoints use get_current_verifact_url() to resolve the target backend.
-    """
-    env = request.headers.get("X-Verifact-Env") or request.headers.get("x-verifact-env")
-    token = _current_env_ctx.set(env if env in VERIFACT_ENVIRONMENTS else None)
-    try:
-        response = await call_next(request)
-    finally:
-        _current_env_ctx.reset(token)
-    return response
 
 
 app.add_middleware(

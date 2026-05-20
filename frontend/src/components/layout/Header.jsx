@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Search, Moon, Sun, Menu, Globe } from 'lucide-react';
+import { Bell, Search, Moon, Sun, Menu } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -16,20 +16,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-const ENV_LABELS = {
-    prod: 'Producción',
-    cert: 'Certificación',
-    test: 'Test',
-};
-
-const ENV_STYLES = {
-    prod: 'bg-success/15 text-success border-success/30',
-    cert: 'bg-warning/15 text-warning border-warning/30',
-    test: 'bg-muted text-muted-foreground border-border',
-};
-
 export const Header = ({ sidebarCollapsed = false }) => {
-    const { user, logout, environment } = useAuth();
+    const { user, logout } = useAuth();
     const { theme, toggleTheme, isDark } = useTheme();
 
     const getInitials = (name) => {
@@ -56,21 +44,6 @@ export const Header = ({ sidebarCollapsed = false }) => {
 
                 {/* Right Section */}
                 <div className="flex items-center gap-2">
-                    {/* Environment Badge */}
-                    {environment && (
-                        <Badge
-                            variant="outline"
-                            className={cn(
-                                'gap-1 px-2 py-1 text-xs font-medium border',
-                                ENV_STYLES[environment] || ENV_STYLES.test
-                            )}
-                            data-testid="header-env-badge"
-                        >
-                            <Globe className="h-3 w-3" />
-                            {ENV_LABELS[environment] || environment}
-                        </Badge>
-                    )}
-
                     {/* Theme Toggle */}
                     <Button
                         variant="ghost"
