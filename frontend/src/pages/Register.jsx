@@ -54,11 +54,18 @@ const Register = () => {
 
     const formatRNC = (value) => {
         // Remove all non-digits
-        const digits = value.replace(/\D/g, '');
-        // Format as XXX-XXXXX-X
+        const digits = value.replace(/\D/g, '').slice(0, 11);
+        // RNC (9 digits): XXX-XXXXX-X
+        // Cédula (11 digits): XXX-XXXXXXX-X
         if (digits.length <= 3) return digits;
-        if (digits.length <= 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-        return `${digits.slice(0, 3)}-${digits.slice(3, 8)}-${digits.slice(8, 9)}`;
+        if (digits.length <= 9) {
+            // While ≤ 9 digits we keep the RNC-style mask
+            if (digits.length <= 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+            return `${digits.slice(0, 3)}-${digits.slice(3, 8)}-${digits.slice(8, 9)}`;
+        }
+        // 10–11 digits → switch to Cédula mask XXX-XXXXXXX-X
+        if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3, 10)}`;
+        return `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10, 11)}`;
     };
 
     const handleCompanyChange = (field, value) => {
@@ -77,8 +84,8 @@ const Register = () => {
 
     const lookupRnc = async () => {
         const cleanRnc = (companyData.rnc || '').replace(/\D/g, '');
-        if (cleanRnc.length < 9) {
-            setRncLookupMessage('Ingresa un RNC válido (9 dígitos)');
+        if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
+            setRncLookupMessage('Ingresa un RNC (9 dígitos) o Cédula (11 dígitos) válido');
             setRncLookupSuccess(false);
             return;
         }
@@ -122,10 +129,11 @@ const Register = () => {
             setError('Por favor complete todos los campos requeridos');
             return false;
         }
-        // Validate RNC format (XXX-XXXXX-X)
+        // Allow both RNC (9 digits → XXX-XXXXX-X) and Cédula (11 digits → XXX-XXXXXXX-X)
         const rncRegex = /^\d{3}-\d{5}-\d{1}$/;
-        if (!rncRegex.test(companyData.rnc)) {
-            setError('El RNC debe tener el formato XXX-XXXXX-X');
+        const cedulaRegex = /^\d{3}-\d{7}-\d{1}$/;
+        if (!rncRegex.test(companyData.rnc) && !cedulaRegex.test(companyData.rnc)) {
+            setError('Debe tener el formato XXX-XXXXX-X (RNC) o XXX-XXXXXXX-X (Cédula)');
             return false;
         }
         setError('');
@@ -325,19 +333,19 @@ const Register = () => {
                                 <div className="space-y-4 animate-fade-in">
                                     {/* RNC first */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="rnc">RNC (Registro Nacional del Contribuyente) *</Label>
+                                        <Label htmlFor="rnc">RNC o Cédula *</Label>
                                         <div className="relative flex gap-2">
                                             <div className="relative flex-1">
                                                 <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                                 <Input
                                                     id="rnc"
-                                                    placeholder="XXX-XXXXX-X"
+                                                    placeholder="XXX-XXXXX-X o XXX-XXXXXXX-X"
                                                     value={companyData.rnc}
                                                     onChange={(e) => handleCompanyChange('rnc', e.target.value)}
                                                     onBlur={lookupRnc}
                                                     onKeyDown={handleRncKeyDown}
                                                     className="pl-10"
-                                                    maxLength={11}
+                                                    maxLength={13}
                                                     data-testid="register-rnc-input"
                                                 />
                                             </div>
@@ -357,7 +365,7 @@ const Register = () => {
                                             </Button>
                                         </div>
                                         <p className="text-xs text-muted-foreground">
-                                            Formato: XXX-XXXXX-X. Pulsa Enter o sal del campo para auto-completar el nombre.
+                                            Formato: XXX-XXXXX-X (RNC, 9 dígitos) o XXX-XXXXXXX-X (Cédula, 11 dígitos). Pulsa Enter o sal del campo para auto-completar el nombre.
                                         </p>
                                         {rncLookupMessage && (
                                             <p
