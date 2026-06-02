@@ -141,13 +141,6 @@ const StaffLogin = () => {
                             )}
                         </Button>
                     </form>
-
-                    <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
-                        <span data-testid="staff-active-env">Ambiente: <span className="font-medium text-slate-300">{envLabel}</span></span>
-                        <span>
-                            Cambiar con <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-slate-300">F8</kbd>
-                        </span>
-                    </div>
                 </div>
 
                 <div className="mt-6 text-center">

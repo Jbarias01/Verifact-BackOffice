@@ -273,18 +273,6 @@ const Login = () => {
                         </Button>
                     </div>
 
-                    <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground" data-testid="login-active-env">
-                        <span className={cn(
-                            "inline-flex h-2 w-2 rounded-full",
-                            environment === 'prod' && 'bg-success',
-                            environment === 'cert' && 'bg-warning',
-                            environment === 'test' && 'bg-muted-foreground'
-                        )} />
-                        Ambiente: <span className="font-medium text-foreground">{environments.find(e => e.value === environment)?.label || environment}</span>
-                        <span className="text-muted-foreground/60">·</span>
-                        <span>Cambiar con <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">F8</kbd></span>
-                    </div>
-
                     <p className="text-center text-xs text-muted-foreground mt-8">
                         Al iniciar sesión, aceptas nuestros{' '}
                         <Link to="/terms" className="text-primary hover:underline">
