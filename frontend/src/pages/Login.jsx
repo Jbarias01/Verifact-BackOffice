@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, FileCheck, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, FileCheck, ArrowRight, Loader2, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { EnvSwitcherModal } from '@/components/EnvSwitcherModal';
 import { cn } from '@/lib/utils';
 
 const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, isAuthenticated, isLoading } = useAuth();
+    const { login, isAuthenticated, isLoading, environment, environments } = useAuth();
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -62,6 +63,8 @@ const Login = () => {
 
     return (
         <div className="min-h-screen flex">
+            <EnvSwitcherModal />
+
             {/* Left Side - Image/Branding */}
             <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
                 <div 
@@ -250,11 +253,36 @@ const Login = () => {
                             variant="outline" 
                             className="w-full mt-4"
                             asChild
+                            data-testid="login-register-button"
                         >
                             <Link to="/register">
                                 Registrar mi empresa
                             </Link>
                         </Button>
+
+                        <Button
+                            variant="ghost"
+                            className="w-full mt-3 text-muted-foreground hover:text-foreground"
+                            asChild
+                            data-testid="login-staff-button"
+                        >
+                            <Link to="/backoffice" className="inline-flex items-center justify-center gap-2">
+                                <ShieldCheck className="h-4 w-4" />
+                                Área de Administración (Staff)
+                            </Link>
+                        </Button>
+                    </div>
+
+                    <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground" data-testid="login-active-env">
+                        <span className={cn(
+                            "inline-flex h-2 w-2 rounded-full",
+                            environment === 'prod' && 'bg-success',
+                            environment === 'cert' && 'bg-warning',
+                            environment === 'test' && 'bg-muted-foreground'
+                        )} />
+                        Ambiente: <span className="font-medium text-foreground">{environments.find(e => e.value === environment)?.label || environment}</span>
+                        <span className="text-muted-foreground/60">·</span>
+                        <span>Cambiar con <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono">F8</kbd></span>
                     </div>
 
                     <p className="text-center text-xs text-muted-foreground mt-8">

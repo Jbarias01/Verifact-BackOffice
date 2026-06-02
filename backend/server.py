@@ -10,6 +10,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 import httpx
+from contextvars import ContextVar
 
 
 ROOT_DIR = Path(__file__).parent
@@ -60,12 +61,31 @@ class LoginResponse(BaseModel):
     usuario: Optional[UsuarioResponse] = None
     message: Optional[str] = None
 
-# Verifact API Base URL (single environment — ecf-test by default)
-VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', 'https://ecf-test.api.verifact.com.do')
+# Verifact API Base URLs by environment
+VERIFACT_ENVIRONMENTS = {
+    'test': 'https://ecf-test.api.verifact.com.do',
+    'cert': 'https://ecf-cert.api.verifact.com.do',
+    'prod': 'https://ecf.api.verifact.com.do',
+}
+
+DEFAULT_ENV = 'prod'
+
+# Default base URL (used when no X-Verifact-Env header is sent)
+VERIFACT_API_URL = os.environ.get('VERIFACT_API_URL', VERIFACT_ENVIRONMENTS[DEFAULT_ENV])
+
+# Context variable storing the env requested for the current HTTP request
+_current_env_ctx: ContextVar[Optional[str]] = ContextVar('current_env', default=None)
 
 
 def get_current_verifact_url() -> str:
-    """Return the configured Verifact API base URL."""
+    """Return the Verifact API base URL for the current request.
+
+    Reads the env captured by the middleware from the X-Verifact-Env header.
+    Falls back to the configured VERIFACT_API_URL (prod by default).
+    """
+    env = _current_env_ctx.get()
+    if env and env in VERIFACT_ENVIRONMENTS:
+        return VERIFACT_ENVIRONMENTS[env]
     return VERIFACT_API_URL
 
 # Add your routes to the router instead of directly to app
@@ -159,6 +179,55 @@ async def proxy_login(login_data: LoginRequest):
             status_code=500,
             detail=f"Error interno: {str(e)}"
         )
+
+class StaffLoginRequest(BaseModel):
+    emailOrUsername: str
+    password: str
+
+
+@api_router.post("/staff/auth/login")
+async def proxy_staff_login(login_data: StaffLoginRequest):
+    """
+    Proxy endpoint for Verifact Staff (admin) login API.
+    Routes to /api/staff/auth/login of the selected environment.
+    """
+    try:
+        api_url = get_current_verifact_url()
+        logger.info(f"Staff login request to {api_url}")
+
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+            response = await client.post(
+                f"{api_url}/api/staff/auth/login",
+                json={
+                    "emailOrUsername": login_data.emailOrUsername,
+                    "password": login_data.password,
+                },
+                headers={"Content-Type": "application/json"},
+            )
+
+            if response.status_code == 200:
+                return response.json()
+            try:
+                error_data = response.json()
+                return {
+                    "success": False,
+                    "message": error_data.get("message", f"Error del servidor: {response.status_code}")
+                }
+            except Exception:
+                return {
+                    "success": False,
+                    "message": f"Error del servidor: {response.status_code}"
+                }
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except Exception as e:
+        logger.error(f"Error proxying staff login: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 
 @api_router.post("/auth/logout")
 async def proxy_logout(authorization: str = Header(...)):
@@ -1655,6 +1724,22 @@ async def proxy_update_cliente(cliente_id: str, request: Request, authorization:
 
 # Include the router in the main app
 app.include_router(api_router)
+
+
+@app.middleware("http")
+async def verifact_env_middleware(request: Request, call_next):
+    """Capture X-Verifact-Env header per request and store in context var.
+
+    Proxy endpoints use get_current_verifact_url() to resolve the target backend.
+    Falls back to default (prod) when no header is present.
+    """
+    env = request.headers.get("X-Verifact-Env") or request.headers.get("x-verifact-env")
+    token = _current_env_ctx.set(env if env in VERIFACT_ENVIRONMENTS else None)
+    try:
+        response = await call_next(request)
+    finally:
+        _current_env_ctx.reset(token)
+    return response
 
 
 app.add_middleware(

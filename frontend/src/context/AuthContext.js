@@ -7,7 +7,7 @@ const AuthContext = createContext(null);
 // In production (IIS): Set REACT_APP_VERIFACT_API_URL to your API URL (requires CORS enabled)
 // In preview: Uses local proxy to bypass CORS
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf-test.api.verifact.com.do';
+const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf.api.verifact.com.do';
 
 // Use proxy in preview, direct API in production
 const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
@@ -15,6 +15,28 @@ const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
 
 // Time before expiry to refresh token (5 minutes)
 const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000;
+
+// Available environments (test, cert, prod). Default is production.
+export const VERIFACT_ENVIRONMENTS = [
+    { value: 'prod', label: 'Producción', url: 'https://ecf.api.verifact.com.do' },
+    { value: 'cert', label: 'Certificación', url: 'https://ecf-cert.api.verifact.com.do' },
+    { value: 'test', label: 'Test / Desarrollo', url: 'https://ecf-test.api.verifact.com.do' },
+];
+
+const DEFAULT_ENVIRONMENT = 'prod';
+const ENV_STORAGE_KEY = 'verifact_environment';
+
+// Global axios interceptor — sends the active env on every request
+axios.interceptors.request.use((config) => {
+    try {
+        const env = localStorage.getItem(ENV_STORAGE_KEY) || DEFAULT_ENVIRONMENT;
+        config.headers = config.headers || {};
+        config.headers['X-Verifact-Env'] = env;
+    } catch (e) {
+        // ignore
+    }
+    return config;
+});
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
@@ -32,8 +54,25 @@ export const AuthProvider = ({ children }) => {
     const [tokenExpiry, setTokenExpiry] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [environment, setEnvironmentState] = useState(() => {
+        try {
+            return localStorage.getItem(ENV_STORAGE_KEY) || DEFAULT_ENVIRONMENT;
+        } catch (e) {
+            return DEFAULT_ENVIRONMENT;
+        }
+    });
     const refreshTimeoutRef = useRef(null);
     const isRefreshingRef = useRef(false);
+
+    const setEnvironment = useCallback((env) => {
+        if (!VERIFACT_ENVIRONMENTS.find(e => e.value === env)) return;
+        try {
+            localStorage.setItem(ENV_STORAGE_KEY, env);
+        } catch (e) {
+            // ignore
+        }
+        setEnvironmentState(env);
+    }, []);
 
     const clearAuthData = useCallback(() => {
         localStorage.removeItem('verifact_token');
@@ -290,11 +329,13 @@ export const AuthProvider = ({ children }) => {
                 ? `${API_BASE_URL}/tenant/registrar`
                 : `${API_BASE_URL}/api/tenant/registrar`;
             
-            // Map form data to the API expected format (new tenant DTO)
+            // Map form data to the API expected format (new tenant DTO).
+            // commercialName mirrors companyName since the field is not shown in the UI.
+            const companyName = (companyData.companyName || '').trim();
             const requestData = {
                 rnc: companyData.rnc.replace(/-/g, ''),
-                companyName: companyData.companyName,
-                commercialName: companyData.commercialName || '',
+                companyName: companyName,
+                commercialName: companyName,
                 companyEmail: companyData.companyEmail,
                 phone: companyData.phone || '',
                 fiscalAddress: companyData.address || '',
@@ -367,6 +408,76 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginStaff = async (emailOrUsername, password) => {
+        setIsLoading(true);
+        try {
+            const url = USE_PROXY
+                ? `${API_BASE_URL}/staff/auth/login`
+                : `${API_BASE_URL}/api/staff/auth/login`;
+
+            const response = await axios.post(url, {
+                emailOrUsername,
+                password,
+            }, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = response.data;
+            if (data.success) {
+                const apiUser = data.usuario || data.staff || {};
+                const userData = {
+                    id: apiUser.id,
+                    email: apiUser.email,
+                    username: apiUser.username || apiUser.userName || null,
+                    name: apiUser.nombre || apiUser.fullName || apiUser.name,
+                    role: apiUser.rol || apiUser.role || 'Staff',
+                    avatar: null,
+                    isStaff: true,
+                };
+                const companyData = {
+                    id: null,
+                    name: 'Verifact · BackOffice',
+                    rnc: '',
+                    address: '',
+                    phone: '',
+                    email: apiUser.email,
+                };
+                const expiryDate = new Date(data.expira);
+
+                setUser(userData);
+                setCompany(companyData);
+                setToken(data.token);
+                setRefreshTokenState(data.refreshToken);
+                setTokenExpiry(expiryDate);
+                setIsAuthenticated(true);
+
+                localStorage.setItem('verifact_token', data.token);
+                localStorage.setItem('verifact_refresh_token', data.refreshToken);
+                localStorage.setItem('verifact_user', JSON.stringify(userData));
+                localStorage.setItem('verifact_company', JSON.stringify(companyData));
+                localStorage.setItem('verifact_token_expiry', data.expira);
+
+                axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+                scheduleTokenRefresh(expiryDate);
+                return { success: true };
+            }
+            return { success: false, error: data.message || 'Credenciales inválidas' };
+        } catch (error) {
+            console.error('Staff login error:', error);
+            let errorMessage = 'Error al iniciar sesión';
+            if (error.response) {
+                if (error.response.status === 401) errorMessage = 'Credenciales inválidas';
+                else if (error.response.status === 400) errorMessage = error.response.data?.message || 'Datos incorrectos';
+                else errorMessage = error.response.data?.message || `Error: ${error.response.status}`;
+            } else if (error.request) {
+                errorMessage = 'No se pudo conectar con el servidor';
+            }
+            return { success: false, error: errorMessage };
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = async () => {
         if (token) {
             try {
@@ -395,7 +506,11 @@ export const AuthProvider = ({ children }) => {
         tokenExpiry,
         isLoading,
         isAuthenticated,
+        environment,
+        environments: VERIFACT_ENVIRONMENTS,
+        setEnvironment,
         login,
+        loginStaff,
         register,
         logout,
         refreshAuthToken,
