@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import StaffLogin from '@/pages/StaffLogin';
+import StaffDashboard from '@/pages/StaffDashboard';
 import Dashboard from '@/pages/Dashboard';
 import Certificados from '@/pages/Certificados';
 import Facturas from '@/pages/Facturas';
@@ -49,6 +50,7 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/backoffice" element={<StaffLogin />} />
+                        <Route path="/backoffice/dashboard" element={<StaffDashboard />} />
                         
                         {/* Protected Dashboard Routes */}
                         <Route path="/dashboard" element={<DashboardLayout />}>

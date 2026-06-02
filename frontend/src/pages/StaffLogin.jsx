@@ -9,34 +9,35 @@ import { EnvSwitcherModal } from '@/components/EnvSwitcherModal';
 
 const StaffLogin = () => {
     const navigate = useNavigate();
-    const { loginStaff, isAuthenticated, environment, environments } = useAuth();
+    const { loginStaff, isAuthenticated, user } = useAuth();
 
-    const [emailOrUsername, setEmailOrUsername] = useState('');
+    const [userField, setUserField] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    if (isAuthenticated && user?.isStaff) {
+        return <Navigate to="/backoffice/dashboard" replace />;
+    }
     if (isAuthenticated) {
         return <Navigate to="/dashboard" replace />;
     }
-
-    const envLabel = environments.find(e => e.value === environment)?.label || environment;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setIsSubmitting(true);
 
-        if (!emailOrUsername || !password) {
+        if (!userField || !password) {
             setError('Por favor complete todos los campos');
             setIsSubmitting(false);
             return;
         }
 
-        const result = await loginStaff(emailOrUsername.trim(), password);
+        const result = await loginStaff(userField.trim(), password);
         if (result.success) {
-            navigate('/dashboard');
+            navigate('/backoffice/dashboard');
         } else {
             setError(result.error || 'Error al iniciar sesión');
         }
@@ -83,14 +84,14 @@ const StaffLogin = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
-                            <Label htmlFor="emailOrUsername" className="text-slate-300">Email o Usuario</Label>
+                            <Label htmlFor="userField" className="text-slate-300">Usuario</Label>
                             <div className="relative">
                                 <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                                 <Input
-                                    id="emailOrUsername"
-                                    placeholder="admin o admin@verifact.com.do"
-                                    value={emailOrUsername}
-                                    onChange={(e) => setEmailOrUsername(e.target.value)}
+                                    id="userField"
+                                    placeholder="admin"
+                                    value={userField}
+                                    onChange={(e) => setUserField(e.target.value)}
                                     className="pl-10 bg-slate-950/60 border-slate-800 text-slate-100 placeholder:text-slate-600 focus-visible:ring-amber-400"
                                     data-testid="staff-login-identifier-input"
                                     autoComplete="username"

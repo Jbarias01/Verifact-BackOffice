@@ -408,29 +408,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const loginStaff = async (emailOrUsername, password) => {
+    const loginStaff = async (user, password) => {
         setIsLoading(true);
         try {
             const url = USE_PROXY
-                ? `${API_BASE_URL}/staff/auth/login`
-                : `${API_BASE_URL}/api/staff/auth/login`;
+                ? `${API_BASE_URL}/platform/auth/login`
+                : `${API_BASE_URL}/api/platform/auth/login`;
 
             const response = await axios.post(url, {
-                emailOrUsername,
+                user,
                 password,
             }, {
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json', 'Accept': 'text/plain' }
             });
 
             const data = response.data;
             if (data.success) {
-                const apiUser = data.usuario || data.staff || {};
+                const apiUser = data.usuario || {};
                 const userData = {
                     id: apiUser.id,
                     email: apiUser.email,
-                    username: apiUser.username || apiUser.userName || null,
-                    name: apiUser.nombre || apiUser.fullName || apiUser.name,
-                    role: apiUser.rol || apiUser.role || 'Staff',
+                    username: apiUser.email, // platform uses 'admin' as both
+                    name: apiUser.nombre || apiUser.email,
+                    role: apiUser.rol || 'PlatformAdmin',
                     avatar: null,
                     isStaff: true,
                 };
@@ -447,23 +447,30 @@ export const AuthProvider = ({ children }) => {
                 setUser(userData);
                 setCompany(companyData);
                 setToken(data.token);
-                setRefreshTokenState(data.refreshToken);
+                setRefreshTokenState(data.refreshToken || null);
                 setTokenExpiry(expiryDate);
                 setIsAuthenticated(true);
 
                 localStorage.setItem('verifact_token', data.token);
-                localStorage.setItem('verifact_refresh_token', data.refreshToken);
+                if (data.refreshToken) {
+                    localStorage.setItem('verifact_refresh_token', data.refreshToken);
+                } else {
+                    localStorage.removeItem('verifact_refresh_token');
+                }
                 localStorage.setItem('verifact_user', JSON.stringify(userData));
                 localStorage.setItem('verifact_company', JSON.stringify(companyData));
                 localStorage.setItem('verifact_token_expiry', data.expira);
 
                 axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-                scheduleTokenRefresh(expiryDate);
+                // Platform tokens may not have refresh; only schedule if a refresh token exists
+                if (data.refreshToken) {
+                    scheduleTokenRefresh(expiryDate);
+                }
                 return { success: true };
             }
             return { success: false, error: data.message || 'Credenciales inválidas' };
         } catch (error) {
-            console.error('Staff login error:', error);
+            console.error('Platform login error:', error);
             let errorMessage = 'Error al iniciar sesión';
             if (error.response) {
                 if (error.response.status === 401) errorMessage = 'Credenciales inválidas';

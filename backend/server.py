@@ -181,28 +181,31 @@ async def proxy_login(login_data: LoginRequest):
         )
 
 class StaffLoginRequest(BaseModel):
-    emailOrUsername: str
+    user: str
     password: str
 
 
-@api_router.post("/staff/auth/login")
-async def proxy_staff_login(login_data: StaffLoginRequest):
+@api_router.post("/platform/auth/login")
+async def proxy_platform_login(login_data: StaffLoginRequest):
     """
-    Proxy endpoint for Verifact Staff (admin) login API.
-    Routes to /api/staff/auth/login of the selected environment.
+    Proxy endpoint for Verifact Platform / Staff login API.
+    Routes to /api/platform/auth/login of the selected environment.
     """
     try:
         api_url = get_current_verifact_url()
-        logger.info(f"Staff login request to {api_url}")
+        logger.info(f"Platform login request to {api_url}")
 
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
             response = await client.post(
-                f"{api_url}/api/staff/auth/login",
+                f"{api_url}/api/platform/auth/login",
                 json={
-                    "emailOrUsername": login_data.emailOrUsername,
+                    "user": login_data.user,
                     "password": login_data.password,
                 },
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "text/plain",
+                },
             )
 
             if response.status_code == 200:
@@ -211,12 +214,12 @@ async def proxy_staff_login(login_data: StaffLoginRequest):
                 error_data = response.json()
                 return {
                     "success": False,
-                    "message": error_data.get("message", f"Error del servidor: {response.status_code}")
+                    "message": error_data.get("message", f"Error del servidor: {response.status_code}"),
                 }
             except Exception:
                 return {
                     "success": False,
-                    "message": f"Error del servidor: {response.status_code}"
+                    "message": f"Error del servidor: {response.status_code}",
                 }
     except httpx.ConnectError as e:
         logger.error(f"Connection error to Verifact API: {str(e)}")
@@ -225,7 +228,7 @@ async def proxy_staff_login(login_data: StaffLoginRequest):
         logger.error(f"Timeout connecting to Verifact API: {str(e)}")
         raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
     except Exception as e:
-        logger.error(f"Error proxying staff login: {str(e)}")
+        logger.error(f"Error proxying platform login: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
