@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
     ShieldCheck, LogOut, Building2, Users, BarChart3, Layers,
     Globe, Mail, KeyRound, Loader2,
@@ -130,9 +130,9 @@ const StaffDashboard = () => {
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <ModuleCard
                             icon={<Building2 className="h-5 w-5" />}
-                            title="Tenants"
-                            description="Empresas registradas en la plataforma."
-                            soon
+                            title="Clientes / Empresas"
+                            description="Empresas (tenants) registradas en la plataforma."
+                            to="/backoffice/clientes"
                             testId="module-tenants"
                         />
                         <ModuleCard
@@ -174,24 +174,30 @@ const InfoItem = ({ icon, label, value, subValue, testId }) => (
     </div>
 );
 
-const ModuleCard = ({ icon, title, description, soon, testId }) => (
-    <div
-        className="rounded-xl border border-slate-800 bg-slate-900/40 p-5 hover:border-amber-500/40 transition-colors"
-        data-testid={testId}
-    >
-        <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                {icon}
-            </div>
-            {soon && (
-                <Badge variant="outline" className="border-slate-700 text-slate-400 text-[10px] uppercase tracking-wider">
-                    Próximamente
-                </Badge>
+const ModuleCard = ({ icon, title, description, soon, to, testId }) => {
+    const inner = (
+        <div
+            className={cn(
+                "rounded-xl border border-slate-800 bg-slate-900/40 p-5 hover:border-amber-500/40 transition-colors",
+                to && "cursor-pointer"
             )}
+            data-testid={testId}
+        >
+            <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                    {icon}
+                </div>
+                {soon && (
+                    <Badge variant="outline" className="border-slate-700 text-slate-400 text-[10px] uppercase tracking-wider">
+                        Próximamente
+                    </Badge>
+                )}
+            </div>
+            <h4 className="mt-4 text-white font-semibold">{title}</h4>
+            <p className="text-xs text-slate-400 mt-1">{description}</p>
         </div>
-        <h4 className="mt-4 text-white font-semibold">{title}</h4>
-        <p className="text-xs text-slate-400 mt-1">{description}</p>
-    </div>
-);
+    );
+    return to ? <Link to={to} className="block">{inner}</Link> : inner;
+};
 
 export default StaffDashboard;

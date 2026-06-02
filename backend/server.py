@@ -232,6 +232,50 @@ async def proxy_platform_login(login_data: StaffLoginRequest):
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
+@api_router.get("/platform/tenants")
+async def proxy_platform_tenants(authorization: str = Header(...)):
+    """
+    Proxy endpoint to list all tenants (clientes / empresas) for the Platform Admin.
+    Forwards to /api/platform/tenants of the selected environment with the staff JWT.
+    """
+    try:
+        api_url = get_current_verifact_url()
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{api_url}/api/platform/tenants",
+                headers={
+                    "Authorization": authorization,
+                    "Accept": "*/*",
+                },
+            )
+            if response.status_code == 200:
+                return response.json()
+            try:
+                error_data = response.json()
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=error_data.get("message") or error_data.get("detail") or f"Error: {response.status_code}",
+                )
+            except HTTPException:
+                raise
+            except Exception:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Error del servidor: {response.status_code}",
+                )
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error to Verifact API: {str(e)}")
+        raise HTTPException(status_code=503, detail="No se pudo conectar con el servidor de Verifact")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout connecting to Verifact API: {str(e)}")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing platform tenants: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
 @api_router.post("/auth/logout")
 async def proxy_logout(authorization: str = Header(...)):
     """

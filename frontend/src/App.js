@@ -9,6 +9,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import StaffLogin from '@/pages/StaffLogin';
 import StaffDashboard from '@/pages/StaffDashboard';
+import ClientesEmpresas from '@/pages/ClientesEmpresas';
 import Dashboard from '@/pages/Dashboard';
 import Certificados from '@/pages/Certificados';
 import Facturas from '@/pages/Facturas';
@@ -51,6 +52,7 @@ function App() {
                         <Route path="/register" element={<Register />} />
                         <Route path="/backoffice" element={<StaffLogin />} />
                         <Route path="/backoffice/dashboard" element={<StaffDashboard />} />
+                        <Route path="/backoffice/clientes" element={<ClientesEmpresas />} />
                         
                         {/* Protected Dashboard Routes */}
                         <Route path="/dashboard" element={<DashboardLayout />}>
