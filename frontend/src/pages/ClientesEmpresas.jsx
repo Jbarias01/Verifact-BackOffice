@@ -76,7 +76,6 @@ const ClientesEmpresas = () => {
         if (isAuthenticated && user?.isStaff) {
             fetchTenants();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, user?.isStaff]);
 
     const filtered = useMemo(() => {

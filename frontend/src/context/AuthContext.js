@@ -321,7 +321,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (companyData, userData, acceptTerms = true) => {
+    const register = async (companyData, userData, acceptTerms = true, planCode = null) => {
         setIsLoading(true);
         
         try {
@@ -342,8 +342,9 @@ export const AuthProvider = ({ children }) => {
                 userFullName: userData.name,
                 userEmail: userData.email,
                 userPassword: userData.password,
-                acceptTerms: !!acceptTerms
+                acceptTerms: !!acceptTerms,
             };
+            if (planCode) requestData.planCode = planCode;
             
             const response = await axios.post(registerUrl, requestData, {
                 headers: {
@@ -485,6 +486,22 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const fetchPlanes = async () => {
+        try {
+            const url = USE_PROXY
+                ? `${API_BASE_URL}/planes`
+                : `${API_BASE_URL}/api/planes`;
+            const res = await axios.get(url);
+            return { success: true, data: Array.isArray(res.data) ? res.data : [] };
+        } catch (error) {
+            console.error('Planes fetch error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || error.response?.data?.message || 'No se pudieron cargar los planes',
+            };
+        }
+    };
+
     const logout = async () => {
         if (token) {
             try {
@@ -522,6 +539,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         refreshAuthToken,
         consultRNC,
+        fetchPlanes,
         apiUrl: API_BASE_URL,
         useProxy: USE_PROXY
     };

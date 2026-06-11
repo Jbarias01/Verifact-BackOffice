@@ -1,25 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { 
     Eye, EyeOff, Mail, Lock, User, Building2, Phone, MapPin, 
-    FileCheck, ArrowRight, ArrowLeft, Check, Loader2, Hash, Search
+    FileCheck, ArrowRight, ArrowLeft, Check, Loader2, Hash, Search,
+    Sparkles, Star, Crown, Package,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { EnvSwitcherModal } from '@/components/EnvSwitcherModal';
 import { cn } from '@/lib/utils';
 
 const steps = [
     { id: 1, name: 'Datos de Empresa', description: 'Información fiscal' },
     { id: 2, name: 'Datos de Usuario', description: 'Cuenta administrador' },
-    { id: 3, name: 'Confirmación', description: 'Revisar y crear' },
+    { id: 3, name: 'Plan', description: 'Elige tu plan' },
+    { id: 4, name: 'Confirmación', description: 'Revisar y crear' },
 ];
+
+const PLAN_ICONS = {
+    BASIC: Package,
+    PROFESSIONAL: Star,
+    ENTERPRISE: Crown,
+};
+
+const formatPrice = (n) => {
+    if (n === null || n === undefined) return '—';
+    try {
+        return new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', maximumFractionDigits: 0 }).format(n);
+    } catch {
+        return `RD$${n}`;
+    }
+};
 
 const Register = () => {
     const navigate = useNavigate();
-    const { register, isAuthenticated, consultRNC } = useAuth();
+    const { register, isAuthenticated, consultRNC, fetchPlanes } = useAuth();
     
     const [currentStep, setCurrentStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -30,6 +48,13 @@ const Register = () => {
     const [isLookingUpRnc, setIsLookingUpRnc] = useState(false);
     const [rncLookupMessage, setRncLookupMessage] = useState('');
     const [rncLookupSuccess, setRncLookupSuccess] = useState(false);
+
+    // Plans
+    const [planes, setPlanes] = useState([]);
+    const [loadingPlanes, setLoadingPlanes] = useState(false);
+    const [planesError, setPlanesError] = useState('');
+    const [selectedPlan, setSelectedPlan] = useState(null); // codigo
+    const [billingCycle, setBillingCycle] = useState('mensual'); // 'mensual' | 'anual'
 
     // Company Data
     const [companyData, setCompanyData] = useState({
@@ -47,6 +72,29 @@ const Register = () => {
         password: '',
         confirmPassword: ''
     });
+
+    // Load plans on mount
+    useEffect(() => {
+        let mounted = true;
+        const load = async () => {
+            setLoadingPlanes(true);
+            setPlanesError('');
+            const res = await fetchPlanes();
+            if (!mounted) return;
+            if (res.success) {
+                setPlanes(res.data);
+                // Auto-select Professional as default if exists, else first plan
+                const pro = res.data.find(p => p.codigo === 'PROFESSIONAL');
+                setSelectedPlan(prev => prev || pro?.codigo || res.data[0]?.codigo || null);
+            } else {
+                setPlanesError(res.error || 'No se pudieron cargar los planes');
+            }
+            setLoadingPlanes(false);
+        };
+        load();
+        return () => { mounted = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     if (isAuthenticated) {
         return <Navigate to="/dashboard" replace />;
@@ -157,11 +205,22 @@ const Register = () => {
         return true;
     };
 
+    const validateStep3 = () => {
+        if (!selectedPlan) {
+            setError('Selecciona un plan para continuar');
+            return false;
+        }
+        setError('');
+        return true;
+    };
+
     const handleNext = () => {
         if (currentStep === 1 && validateStep1()) {
             setCurrentStep(2);
         } else if (currentStep === 2 && validateStep2()) {
             setCurrentStep(3);
+        } else if (currentStep === 3 && validateStep3()) {
+            setCurrentStep(4);
         }
     };
 
@@ -177,9 +236,13 @@ const Register = () => {
             setError('Debes aceptar los términos y condiciones');
             return;
         }
+        if (!selectedPlan) {
+            setError('Selecciona un plan');
+            return;
+        }
 
         setIsSubmitting(true);
-        const result = await register(companyData, userData, acceptTerms);
+        const result = await register(companyData, userData, acceptTerms, selectedPlan);
         
         if (result.success) {
             // Registration successful - redirect to login
@@ -196,8 +259,11 @@ const Register = () => {
         setIsSubmitting(false);
     };
 
+    const selectedPlanObj = planes.find(p => p.codigo === selectedPlan) || null;
+
     return (
         <div className="min-h-screen flex">
+            <EnvSwitcherModal />
             {/* Left Side - Image/Branding */}
             <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
                 <div 
@@ -312,12 +378,14 @@ const Register = () => {
                             <h2 className="text-2xl font-bold text-foreground">
                                 {currentStep === 1 && 'Datos de tu Empresa'}
                                 {currentStep === 2 && 'Crea tu cuenta'}
-                                {currentStep === 3 && 'Confirma tu registro'}
+                                {currentStep === 3 && 'Elige tu Plan'}
+                                {currentStep === 4 && 'Confirma tu registro'}
                             </h2>
                             <p className="text-muted-foreground mt-2">
                                 {currentStep === 1 && 'Empieza con tu RNC y completaremos los datos por ti'}
                                 {currentStep === 2 && 'Configura tu cuenta de administrador'}
-                                {currentStep === 3 && 'Revisa los datos antes de continuar'}
+                                {currentStep === 3 && 'Selecciona el plan que mejor se ajusta a tu empresa'}
+                                {currentStep === 4 && 'Revisa los datos antes de continuar'}
                             </p>
                         </div>
 
@@ -529,8 +597,138 @@ const Register = () => {
                                 </div>
                             )}
 
-                            {/* Step 3: Confirmation */}
+                            {/* Step 3: Plan selection */}
                             {currentStep === 3 && (
+                                <div className="space-y-4 animate-fade-in" data-testid="step-plan">
+                                    {/* Billing toggle */}
+                                    <div className="flex items-center justify-center">
+                                        <div className="inline-flex rounded-full border bg-secondary/50 p-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => setBillingCycle('mensual')}
+                                                className={cn(
+                                                    "px-4 py-1.5 rounded-full text-sm transition",
+                                                    billingCycle === 'mensual'
+                                                        ? "bg-background shadow text-foreground"
+                                                        : "text-muted-foreground"
+                                                )}
+                                                data-testid="plan-cycle-mensual"
+                                            >
+                                                Mensual
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setBillingCycle('anual')}
+                                                className={cn(
+                                                    "px-4 py-1.5 rounded-full text-sm transition inline-flex items-center gap-2",
+                                                    billingCycle === 'anual'
+                                                        ? "bg-background shadow text-foreground"
+                                                        : "text-muted-foreground"
+                                                )}
+                                                data-testid="plan-cycle-anual"
+                                            >
+                                                Anual
+                                                <span className="text-[10px] font-semibold rounded-full bg-success/15 text-success px-2 py-0.5">2 meses gratis</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {loadingPlanes ? (
+                                        <div className="py-10 flex items-center justify-center text-muted-foreground" data-testid="planes-loading">
+                                            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                            Cargando planes...
+                                        </div>
+                                    ) : planesError ? (
+                                        <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive text-sm" data-testid="planes-error">
+                                            {planesError}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {planes.map(plan => {
+                                                const Icon = PLAN_ICONS[plan.codigo] || Package;
+                                                const price = billingCycle === 'mensual' ? plan.precioMensual : plan.precioAnual;
+                                                const isSelected = selectedPlan === plan.codigo;
+                                                const isPro = plan.codigo === 'PROFESSIONAL';
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={plan.id}
+                                                        onClick={() => setSelectedPlan(plan.codigo)}
+                                                        data-testid={`plan-option-${plan.codigo}`}
+                                                        className={cn(
+                                                            "relative w-full text-left rounded-xl border p-5 transition-all",
+                                                            isSelected
+                                                                ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                                                                : "border-border hover:border-primary/40 hover:bg-secondary/40"
+                                                        )}
+                                                    >
+                                                        {isPro && (
+                                                            <span className="absolute -top-2 right-4 text-[10px] font-semibold uppercase tracking-widest bg-primary text-primary-foreground rounded-full px-2 py-0.5">
+                                                                Recomendado
+                                                            </span>
+                                                        )}
+                                                        <div className="flex items-start gap-4">
+                                                            <div className={cn(
+                                                                "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                                                isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                                                            )}>
+                                                                <Icon className="h-5 w-5" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-baseline justify-between gap-2">
+                                                                    <h4 className="font-semibold text-foreground">{plan.nombre}</h4>
+                                                                    <div className="text-right">
+                                                                        <p className="text-base font-bold text-foreground">{formatPrice(price)}</p>
+                                                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">/{billingCycle === 'mensual' ? 'mes' : 'año'}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground mt-1">{plan.descripcion}</p>
+
+                                                                <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
+                                                                    {(plan.features || []).slice(0, 6).map(f => {
+                                                                        let valueText;
+                                                                        let included = true;
+                                                                        if (f.tipoDato === 'boolean') {
+                                                                            included = String(f.valor).toLowerCase() === 'true';
+                                                                            valueText = f.nombre;
+                                                                        } else {
+                                                                            valueText = `${f.valor === 'ilimitado' ? 'Ilimitado' : f.valor} · ${f.nombre}`;
+                                                                        }
+                                                                        return (
+                                                                            <li
+                                                                                key={f.featureId}
+                                                                                className={cn(
+                                                                                    "flex items-start gap-1.5 text-[11px]",
+                                                                                    included ? "text-foreground" : "text-muted-foreground/60 line-through"
+                                                                                )}
+                                                                            >
+                                                                                {included ? (
+                                                                                    <Check className="h-3 w-3 text-success mt-0.5 flex-shrink-0" />
+                                                                                ) : (
+                                                                                    <span className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                                                                )}
+                                                                                <span className="truncate">{valueText}</span>
+                                                                            </li>
+                                                                        );
+                                                                    })}
+                                                                </ul>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                                                                    <Check className="h-4 w-4 text-primary-foreground" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Step 4: Confirmation */}
+                            {currentStep === 4 && (
                                 <div className="space-y-6 animate-fade-in">
                                     <div className="rounded-xl border bg-secondary/30 p-6">
                                         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -582,6 +780,32 @@ const Register = () => {
                                         </div>
                                     </div>
 
+                                    {selectedPlanObj && (
+                                        <div className="rounded-xl border bg-secondary/30 p-6" data-testid="confirm-plan-card">
+                                            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                                                <Sparkles className="h-5 w-5 text-primary" />
+                                                Plan seleccionado
+                                            </h3>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Plan:</span>
+                                                    <span className="font-medium">{selectedPlanObj.nombre} <span className="text-xs text-muted-foreground">({selectedPlanObj.codigo})</span></span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Facturación:</span>
+                                                    <span className="font-medium capitalize">{billingCycle}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Precio:</span>
+                                                    <span className="font-semibold text-primary">
+                                                        {formatPrice(billingCycle === 'mensual' ? selectedPlanObj.precioMensual : selectedPlanObj.precioAnual)}
+                                                        <span className="text-xs text-muted-foreground ml-1">/{billingCycle === 'mensual' ? 'mes' : 'año'}</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="flex items-start space-x-2">
                                         <Checkbox 
                                             id="terms" 
@@ -622,7 +846,7 @@ const Register = () => {
                                     </Button>
                                 )}
                                 
-                                {currentStep < 3 ? (
+                                {currentStep < 4 ? (
                                     <Button 
                                         type="button" 
                                         onClick={handleNext}
