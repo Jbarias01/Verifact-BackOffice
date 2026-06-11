@@ -57,11 +57,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { format, subDays } from 'date-fns';
 
-// API URL Configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf-test.api.verifact.com.do';
-const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
-const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
+import { apiUrl, USE_PROXY } from '@/lib/api';
 
 // Helper to format currency
 const formatCurrency = (amount) => {
@@ -193,9 +189,7 @@ const EcfEmitidos = () => {
         setError(null);
         
         try {
-            const url = USE_PROXY 
-                ? `${API_BASE_URL}/ecf/emitidos`
-                : `${API_BASE_URL}/api/ecf/emitidos`;
+            const url = apiUrl(`ecf/emitidos`);
             
             // Build params
             const params = {};

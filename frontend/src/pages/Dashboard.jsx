@@ -58,11 +58,7 @@ import {
     Line
 } from 'recharts';
 
-// API URL Configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf-test.api.verifact.com.do';
-const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
-const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
+import { apiUrl, USE_PROXY } from '@/lib/api';
 
 // Helper to format currency
 const formatCurrency = (amount) => {
@@ -141,9 +137,7 @@ const Dashboard = () => {
         try {
             // Fetch eCF Emitidos
             try {
-                const url = USE_PROXY 
-                    ? `${API_BASE_URL}/ecf/emitidos`
-                    : `${API_BASE_URL}/api/ecf/emitidos`;
+                const url = apiUrl(`ecf/emitidos`);
                 const emitidosRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -156,9 +150,7 @@ const Dashboard = () => {
 
             // Fetch eCF Recibidos
             try {
-                const url = USE_PROXY 
-                    ? `${API_BASE_URL}/fe/recepcion/ecf/recibidos/filtros`
-                    : `${API_BASE_URL}/fe/recepcion/api/ecf/recibidos`;
+                const url = apiUrl('fe/recepcion/ecf/recibidos/filtros', { directPath: 'fe/recepcion/api/ecf/recibidos' });
                 const recibidosRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -171,9 +163,7 @@ const Dashboard = () => {
 
             // Fetch Comprobantes
             try {
-                const url = USE_PROXY 
-                    ? `${API_BASE_URL}/comprobantes/cliente`
-                    : `${API_BASE_URL}/api/comprobantes/cliente`;
+                const url = apiUrl(`comprobantes/cliente`);
                 const comprobantesRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -186,9 +176,7 @@ const Dashboard = () => {
 
             // Fetch Certificados
             try {
-                const url = USE_PROXY 
-                    ? `${API_BASE_URL}/certificado/listado`
-                    : `${API_BASE_URL}/api/certificado/listado`;
+                const url = apiUrl(`certificado/listado`);
                 const certificadosRes = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });

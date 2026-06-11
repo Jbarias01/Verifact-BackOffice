@@ -50,12 +50,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import axios from 'axios';
-
-// API URL Configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf-test.api.verifact.com.do';
-const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
-const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
+import { apiUrl, USE_PROXY } from '@/lib/api';
 
 // Helper to format date
 const formatDate = (dateString) => {
@@ -116,9 +111,7 @@ const Clientes = () => {
         setError(null);
         
         try {
-            const url = USE_PROXY 
-                ? `${API_BASE_URL}/clientes/lista`
-                : `${API_BASE_URL}/api/clientes`;
+            const url = apiUrl('clientes/lista', { directPath: 'api/clientes' });
             
             const response = await axios.get(url, {
                 headers: {
@@ -196,9 +189,7 @@ const Clientes = () => {
     // Open detail modal
     const openDetailModal = async (cliente) => {
         try {
-            const url = USE_PROXY 
-                ? `${API_BASE_URL}/clientes/lista/${cliente.id}`
-                : `${API_BASE_URL}/api/clientes/${cliente.id}`;
+            const url = apiUrl(`clientes/lista/${cliente.id}`, { directPath: `api/clientes/${cliente.id}` });
             
             const response = await axios.get(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -235,9 +226,7 @@ const Clientes = () => {
 
             if (editingCliente) {
                 // Update
-                const url = USE_PROXY 
-                    ? `${API_BASE_URL}/clientes/lista/${editingCliente.id}`
-                    : `${API_BASE_URL}/api/clientes/${editingCliente.id}`;
+                const url = apiUrl(`clientes/lista/${editingCliente.id}`, { directPath: `api/clientes/${editingCliente.id}` });
                 
                 await axios.put(url, payload, {
                     headers: {
@@ -248,9 +237,7 @@ const Clientes = () => {
                 toast.success('Cliente actualizado exitosamente');
             } else {
                 // Create
-                const url = USE_PROXY 
-                    ? `${API_BASE_URL}/clientes/lista`
-                    : `${API_BASE_URL}/api/clientes`;
+                const url = apiUrl('clientes/lista', { directPath: 'api/clientes' });
                 
                 await axios.post(url, payload, {
                     headers: {

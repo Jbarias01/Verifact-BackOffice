@@ -25,11 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 
-// API URL Configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf-test.api.verifact.com.do';
-const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
-const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
+import { apiUrl, USE_PROXY } from '@/lib/api';
 
 // Helper to format date
 const formatDate = (dateString) => {
@@ -65,9 +61,7 @@ const Empresa = () => {
         setError(null);
         
         try {
-            const url = USE_PROXY 
-                ? `${API_BASE_URL}/clientes`
-                : `${API_BASE_URL}/api/clientes`;
+            const url = apiUrl(`clientes`);
             
             const response = await axios.get(url, {
                 headers: {

@@ -1,17 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { apiUrl, USE_PROXY, ENV_STORAGE_KEY, DEFAULT_ENV, apiBaseUrl } from '@/lib/api';
 
 const AuthContext = createContext(null);
-
-// API URL Configuration
-// In production (IIS): Set REACT_APP_VERIFACT_API_URL to your API URL (requires CORS enabled)
-// In preview: Uses local proxy to bypass CORS
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const VERIFACT_API_DIRECT = process.env.REACT_APP_VERIFACT_API_URL || 'https://ecf.api.verifact.com.do';
-
-// Use proxy in preview, direct API in production
-const USE_PROXY = BACKEND_URL && BACKEND_URL.includes('preview.emergentagent.com');
-const API_BASE_URL = USE_PROXY ? `${BACKEND_URL}/api` : VERIFACT_API_DIRECT;
 
 // Time before expiry to refresh token (5 minutes)
 const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000;
@@ -23,8 +14,7 @@ export const VERIFACT_ENVIRONMENTS = [
     { value: 'test', label: 'Test / Desarrollo', url: 'https://ecf-test.api.verifact.com.do' },
 ];
 
-const DEFAULT_ENVIRONMENT = 'prod';
-const ENV_STORAGE_KEY = 'verifact_environment';
+const DEFAULT_ENVIRONMENT = DEFAULT_ENV;
 
 // Global axios interceptor — sends the active env on every request
 axios.interceptors.request.use((config) => {
@@ -135,9 +125,7 @@ export const AuthProvider = ({ children }) => {
         isRefreshingRef.current = true;
         
         try {
-            const refreshUrl = USE_PROXY 
-                ? `${API_BASE_URL}/auth/refresh`
-                : `${API_BASE_URL}/api/auth/refresh`;
+            const refreshUrl = apiUrl('auth/refresh');
             
             const response = await axios.post(refreshUrl, {
                 refreshToken: storedRefreshToken
@@ -254,9 +242,7 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         
         try {
-            const loginUrl = USE_PROXY 
-                ? `${API_BASE_URL}/auth/login`
-                : `${API_BASE_URL}/api/auth/login`;
+            const loginUrl = apiUrl('auth/login');
             
             const response = await axios.post(loginUrl, {
                 email,
@@ -325,9 +311,7 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         
         try {
-            const registerUrl = USE_PROXY 
-                ? `${API_BASE_URL}/tenant/registrar`
-                : `${API_BASE_URL}/api/tenant/registrar`;
+            const registerUrl = apiUrl('tenant/registrar');
             
             // Map form data to the API expected format (new tenant DTO).
             // commercialName mirrors companyName since the field is not shown in the UI.
@@ -394,9 +378,7 @@ export const AuthProvider = ({ children }) => {
             const cleanRnc = (rnc || '').replace(/\D/g, '');
             if (!cleanRnc) return { success: false, error: 'RNC vacío' };
 
-            const url = USE_PROXY 
-                ? `${API_BASE_URL}/rnc/consultar/${cleanRnc}`
-                : `${API_BASE_URL}/api/rnc/consultar-rnc/${cleanRnc}`;
+            const url = apiUrl(`rnc/consultar/${cleanRnc}`, { directPath: `api/rnc/consultar-rnc/${cleanRnc}` });
             
             const response = await axios.get(url);
             return { success: true, data: response.data };
@@ -412,9 +394,7 @@ export const AuthProvider = ({ children }) => {
     const loginStaff = async (user, password) => {
         setIsLoading(true);
         try {
-            const url = USE_PROXY
-                ? `${API_BASE_URL}/platform/auth/login`
-                : `${API_BASE_URL}/api/platform/auth/login`;
+            const url = apiUrl('platform/auth/login');
 
             const response = await axios.post(url, {
                 user,
@@ -488,9 +468,7 @@ export const AuthProvider = ({ children }) => {
 
     const fetchPlanes = async () => {
         try {
-            const url = USE_PROXY
-                ? `${API_BASE_URL}/planes`
-                : `${API_BASE_URL}/api/planes`;
+            const url = apiUrl('planes');
             const res = await axios.get(url);
             return { success: true, data: Array.isArray(res.data) ? res.data : [] };
         } catch (error) {
@@ -505,9 +483,7 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         if (token) {
             try {
-                const logoutUrl = USE_PROXY 
-                    ? `${API_BASE_URL}/auth/logout`
-                    : `${API_BASE_URL}/api/auth/logout`;
+                const logoutUrl = apiUrl('auth/logout');
                 
                 await axios.post(logoutUrl, {}, {
                     headers: {
@@ -540,7 +516,7 @@ export const AuthProvider = ({ children }) => {
         refreshAuthToken,
         consultRNC,
         fetchPlanes,
-        apiUrl: API_BASE_URL,
+        apiUrl: apiBaseUrl(),
         useProxy: USE_PROXY
     };
 
