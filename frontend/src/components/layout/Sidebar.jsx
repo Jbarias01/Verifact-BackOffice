@@ -16,6 +16,7 @@ import {
     Inbox,
     Send,
     Store,
+    ShoppingCart,
     Users
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -27,6 +28,12 @@ const menuItems = [
         title: 'Principal',
         items: [
             { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+        ]
+    },
+    {
+        title: 'Ventas',
+        items: [
+            { name: 'POS', icon: ShoppingCart, path: '/dashboard/pos', badge: 'Nuevo' },
         ]
     },
     {
@@ -83,8 +90,13 @@ export const Sidebar = () => {
                     isActive ? "text-primary-foreground" : "text-sidebar-muted group-hover:text-sidebar-foreground"
                 )} />
                 {!isCollapsed && (
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium flex-1 inline-flex items-center justify-between gap-2">
                         {item.name}
+                        {item.badge && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-success/15 text-success">
+                                {item.badge}
+                            </span>
+                        )}
                     </span>
                 )}
             </NavLink>
