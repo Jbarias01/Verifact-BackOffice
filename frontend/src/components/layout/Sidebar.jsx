@@ -33,7 +33,7 @@ const menuItems = [
     {
         title: 'Ventas',
         items: [
-            { name: 'POS', icon: ShoppingCart, path: '/dashboard/pos', badge: 'Nuevo' },
+            { name: 'POS', icon: ShoppingCart, path: '/pos', badge: 'Nuevo' },
         ]
     },
     {

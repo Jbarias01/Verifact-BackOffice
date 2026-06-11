@@ -60,11 +60,13 @@ function App() {
                         {/* Mockup previews (design proposal) */}
                         <Route path="/mockup/dashboard" element={<DashboardPosMockup />} />
                         <Route path="/mockup/pos" element={<PosSalesMockup />} />
+
+                        {/* POS — full screen (auth required, no DashboardLayout) */}
+                        <Route path="/pos" element={<Pos />} />
                         
                         {/* Protected Dashboard Routes */}
                         <Route path="/dashboard" element={<DashboardLayout />}>
                             <Route index element={<Dashboard />} />
-                            <Route path="pos" element={<Pos />} />
                             <Route path="facturas" element={<Facturas />} />
                             <Route path="recepcion-ecf" element={<RecepcionEcf />} />
                             <Route path="clientes" element={<Clientes />} />

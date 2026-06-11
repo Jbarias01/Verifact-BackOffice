@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
     Search, ScanLine, X, Plus, Minus, Trash2, User, UserPlus,
-    Clock, Store, FileText, Percent, Pause, Receipt,
-    Tag, ShoppingCart, ChevronDown,
+    LogOut, Clock, Store, FileText, Percent, Pause, Receipt,
+    Tag, ShoppingCart, ChevronDown, ArrowLeft, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
-// =========== DUMMY DATA (will be replaced with real API once endpoints are provided) ===========
+// =========== DUMMY DATA (will be replaced once endpoints are provided) ===========
 const CATEGORIAS = [
     { id: 'all', nombre: 'Todos', icon: Tag, count: 248 },
     { id: 'beb', nombre: 'Bebidas', icon: Tag, count: 64 },
@@ -91,14 +92,15 @@ const Kbd = ({ children }) => (
 );
 
 const Pos = () => {
-    const { user } = useAuth();
+    const navigate = useNavigate();
+    const { user, isAuthenticated, isLoading, logout } = useAuth();
     const [activeCat, setActiveCat] = useState('all');
     const [query, setQuery] = useState('');
     const [cart, setCart] = useState(INITIAL_CART);
     const [cliente] = useState({ nombre: 'Consumidor Final', rnc: null });
     const [tipoEcf, setTipoEcf] = useState('B02');
 
-    // Keyboard shortcuts (F2/F4/Esc)
+    // Keyboard shortcuts (F2 focus search, Esc clear search)
     useEffect(() => {
         const handler = (e) => {
             if (e.key === 'F2') {
@@ -112,7 +114,16 @@ const Pos = () => {
         return () => window.removeEventListener('keydown', handler);
     }, []);
 
-    const filtered = useMemo(() => {
+    if (isLoading) {
+        return (
+            <div className="h-screen w-screen flex items-center justify-center bg-background">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+    const filtered = (() => {
         let list = PRODUCTOS;
         if (activeCat !== 'all') list = list.filter(p => p.cat === activeCat);
         if (query.trim()) {
@@ -120,7 +131,7 @@ const Pos = () => {
             list = list.filter(p => p.nombre.toLowerCase().includes(q) || p.sku.includes(q));
         }
         return list;
-    }, [activeCat, query]);
+    })();
 
     const addToCart = (producto) => {
         setCart(prev => {
@@ -139,35 +150,70 @@ const Pos = () => {
     const total = subtotal + itbis - descuento;
 
     const sucursalName = user?.sucursal?.nombre || 'Sucursal';
-    const cajeroName = user?.name?.split(' ')[0] || 'Cajero';
+    const cajeroName = user?.name || 'Cajero';
+    const cajeroInitials = (user?.name || 'CA')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(s => s[0])
+        .join('')
+        .toUpperCase();
+
+    const handleExit = async () => {
+        // Just return to dashboard — don't close the session
+        navigate('/dashboard');
+    };
 
     return (
-        // DashboardLayout already provides padding p-6 around <Outlet/>.
-        // We compensate by going edge-to-edge inside that wrapper.
-        <div className="-m-6 h-[calc(100vh-4rem)] flex flex-col bg-background overflow-hidden">
-            {/* Slim demo banner */}
+        <div className="h-screen w-screen flex flex-col bg-background overflow-hidden text-foreground">
+            {/* Demo banner */}
             <div className="bg-warning/15 text-warning text-[11px] font-semibold uppercase tracking-widest text-center py-1 border-b border-warning/30 flex-shrink-0" data-testid="pos-demo-banner">
                 Datos de prueba · Conexión con API pendiente
             </div>
 
-            {/* Mini-toolbar (cashier + branch + clock) */}
-            <div className="flex items-center justify-between gap-4 px-4 py-2 border-b bg-card/40 flex-shrink-0" data-testid="pos-toolbar">
-                <div className="flex items-center gap-3 text-xs text-muted-foreground min-w-0">
-                    <span className="inline-flex items-center gap-1.5 truncate">
+            {/* Header */}
+            <header className="h-14 border-b bg-card flex items-center justify-between px-4 flex-shrink-0" data-testid="pos-header">
+                <div className="flex items-center gap-3">
+                    <Link
+                        to="/dashboard"
+                        className="font-bold text-foreground inline-flex items-center gap-2 hover:opacity-80"
+                        data-testid="pos-logo"
+                        title="Volver al BackOffice"
+                    >
+                        <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                        <ShoppingCart className="h-5 w-5 text-primary" />
+                        <span className="text-sm">Verifact POS</span>
+                    </Link>
+                    <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+                    <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5 hidden sm:inline-flex">
                         <Store className="h-3.5 w-3.5" />
-                        <span className="truncate">{sucursalName}</span>
+                        {sucursalName}
                     </span>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span className="inline-flex items-center gap-1.5">
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5 hidden md:inline-flex">
                         <Clock className="h-3.5 w-3.5" />
                         Caja abierta desde 8:00 am
                     </span>
+                    <div className="inline-flex items-center gap-2 pl-3 border-l">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
+                            {cajeroInitials}
+                        </div>
+                        <span className="text-sm font-medium hidden sm:inline">{cajeroName}</span>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleExit}
+                        data-testid="pos-exit"
+                        className="text-muted-foreground"
+                        title="Salir del POS"
+                    >
+                        <LogOut className="h-4 w-4 mr-1" />
+                        Salir
+                    </Button>
                 </div>
-                <div className="inline-flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">Cajero:</span>
-                    <span className="font-medium text-foreground">{cajeroName}</span>
-                </div>
-            </div>
+            </header>
 
             {/* Body */}
             <div className="flex-1 grid grid-cols-12 overflow-hidden">
@@ -227,7 +273,7 @@ const Pos = () => {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3" data-testid="pos-products-grid">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3" data-testid="pos-products-grid">
                             {filtered.map(p => (
                                 <ProductCard key={p.id} producto={p} onAdd={addToCart} />
                             ))}
@@ -412,6 +458,15 @@ const Pos = () => {
                     </div>
                 </aside>
             </div>
+
+            {/* Footer keymap */}
+            <footer className="h-9 border-t bg-card flex items-center justify-center gap-5 text-[11px] text-muted-foreground flex-shrink-0">
+                <span className="inline-flex items-center gap-1.5"><Kbd>F2</Kbd> Buscar</span>
+                <span className="inline-flex items-center gap-1.5"><Kbd>F3</Kbd> Cliente</span>
+                <span className="inline-flex items-center gap-1.5"><Kbd>F4</Kbd> Cobrar</span>
+                <span className="inline-flex items-center gap-1.5"><Kbd>F5</Kbd> Descuento</span>
+                <span className="inline-flex items-center gap-1.5"><Kbd>Esc</Kbd> Cancelar</span>
+            </footer>
         </div>
     );
 };
