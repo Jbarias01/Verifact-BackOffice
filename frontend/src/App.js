@@ -10,6 +10,8 @@ import Register from '@/pages/Register';
 import StaffLogin from '@/pages/StaffLogin';
 import StaffDashboard from '@/pages/StaffDashboard';
 import ClientesEmpresas from '@/pages/ClientesEmpresas';
+import DashboardPosMockup from '@/pages/mockups/DashboardPosMockup';
+import PosSalesMockup from '@/pages/mockups/PosSalesMockup';
 import Dashboard from '@/pages/Dashboard';
 import Certificados from '@/pages/Certificados';
 import Facturas from '@/pages/Facturas';
@@ -53,6 +55,10 @@ function App() {
                         <Route path="/backoffice" element={<StaffLogin />} />
                         <Route path="/backoffice/dashboard" element={<StaffDashboard />} />
                         <Route path="/backoffice/clientes" element={<ClientesEmpresas />} />
+
+                        {/* Mockup previews (design proposal) */}
+                        <Route path="/mockup/dashboard" element={<DashboardPosMockup />} />
+                        <Route path="/mockup/pos" element={<PosSalesMockup />} />
                         
                         {/* Protected Dashboard Routes */}
                         <Route path="/dashboard" element={<DashboardLayout />}>
