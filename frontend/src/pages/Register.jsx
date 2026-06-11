@@ -37,7 +37,7 @@ const formatPrice = (n) => {
 
 const Register = () => {
     const navigate = useNavigate();
-    const { register, isAuthenticated, consultRNC, fetchPlanes } = useAuth();
+    const { register, login, isAuthenticated, consultRNC, fetchPlanes } = useAuth();
     
     const [currentStep, setCurrentStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -245,13 +245,19 @@ const Register = () => {
         const result = await register(companyData, userData, acceptTerms, selectedPlan);
         
         if (result.success) {
-            // Registration successful - redirect to login
-            navigate('/login', { 
-                state: { 
-                    message: result.message || 'Registro exitoso. Por favor inicia sesión.',
-                    email: userData.email 
-                } 
-            });
+            // Auto-login with the newly created credentials
+            const loginResult = await login(userData.email, userData.password);
+            if (loginResult.success) {
+                navigate('/dashboard');
+            } else {
+                // Registration ok but login failed — fall back to login screen
+                navigate('/login', {
+                    state: {
+                        message: 'Registro exitoso. Inicia sesión con tus credenciales.',
+                        email: userData.email,
+                    },
+                });
+            }
         } else {
             setError(result.error || 'Error en el registro');
         }
@@ -866,11 +872,11 @@ const Register = () => {
                                         {isSubmitting ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Registrando...
+                                                Creando cuenta...
                                             </>
                                         ) : (
                                             <>
-                                                Crear Cuenta
+                                                Crear Cuenta y Entrar
                                                 <Check className="ml-2 h-4 w-4" />
                                             </>
                                         )}
