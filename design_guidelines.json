@@ -1,0 +1,68 @@
+{
+  "theme": "LIGHT",
+  "archetype": "4 (Swiss & High-Contrast - adapted for Retail Dashboard/POS)",
+  "design_context": "Dashboard + Retail/POS (hybrid_fullstack)",
+  "rationale": "The application serves as both a high-level administrative dashboard and a high-speed Point of Sale system. We need clean, high-contrast interfaces for data legibility (Dashboard) and large, clear touch targets with clear visual hierarchy for fast operation (POS). Using the existing Light Theme semantic tokens (Corporate Blue + Trust Green) to convey reliability and action.",
+  "typography": {
+    "headings": {
+      "family": "Plus Jakarta Sans",
+      "weights": ["600", "700"],
+      "usage": "H1, large metrics, Totals in POS cart"
+    },
+    "body": {
+      "family": "Inter",
+      "weights": ["400", "500"],
+      "usage": "Data tables, product names, buttons, small labels"
+    }
+  },
+  "color_palette": {
+    "background": "bg-background",
+    "surface": "bg-card",
+    "primary": "bg-primary (Corporate Blue - hsl(215 76% 42%))",
+    "accent_success": "bg-success (Trust Green - hsl(152 55% 42%)) for the main 'Cobrar' CTA",
+    "destructive": "bg-destructive for delete actions",
+    "text": {
+      "primary": "text-foreground",
+      "secondary": "text-muted-foreground",
+      "highlight": "text-primary"
+    }
+  },
+  "layout_and_spacing": {
+    "pos_screen": {
+      "type": "Full-screen fixed layout (h-screen, overflow-hidden)",
+      "grid": "grid-cols-12",
+      "left_panel": "col-span-8 lg:col-span-9, p-4, contains categories and product grid",
+      "right_panel": "col-span-4 lg:col-span-3, border-l, flex flex-col (cart and totals)",
+      "header": "h-14 border-b flex items-center px-4"
+    },
+    "dashboard_screen": {
+      "type": "Scrollable dashboard layout",
+      "grid": "Bento-style grid",
+      "spacing": "gap-6, p-6 or p-8"
+    }
+  },
+  "components": {
+    "cards": "Flat, 1px subtle border-border, no heavy shadows by default. Use shadow-sm for interaction.",
+    "buttons": {
+      "primary": "Solid bg-primary text-primary-foreground, rounded-md",
+      "hero_cta": "Massive, bg-success hover:bg-success/90 text-white font-bold text-xl py-6 (for Cobrar)"
+    },
+    "charts": "Recharts AreaChart or LineChart with Corporate Blue (chart-1).",
+    "icons": "lucide-react (clear, geometric style)"
+  },
+  "media_urls": {
+    "product_beverage": "https://images.unsplash.com/photo-1696739696220-8d2e27465662?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwxfHxiZXZlcmFnZSUyMGRyaW5rJTIwY2FufGVufDB8fHx8MTc4MTE0Nzk3M3ww&ixlib=rb-4.1.0&q=85",
+    "product_snack": "https://images.unsplash.com/photo-1708746333830-6a40a841e810?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHw0fHxzbmFjayUyMGJhZyUyMGNoaXBzfGVufDB8fHx8MTc4MTE0Nzk3M3ww&ixlib=rb-4.1.0&q=85",
+    "product_cleaning": "https://images.unsplash.com/photo-1563453392212-326f5e854473?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxjbGVhbmluZyUyMHN1cHBsaWVzJTIwYm90dGxlfGVufDB8fHx8MTc4MTE0Nzk3M3ww&ixlib=rb-4.1.0&q=85"
+  },
+  "instructions_to_main_agent": [
+    "Create two mockup components in /app/frontend/src/pages/mockups/: 'DashboardPosMockup.jsx' and 'PosSalesMockup.jsx'.",
+    "Do NOT use TypeScript (.tsx), use standard React JSX (.jsx) or (.js).",
+    "Add these two new routes to /app/frontend/src/App.js for preview purposes (e.g., /mockup/dashboard and /mockup/pos).",
+    "For the POS screen, use a layout that removes the traditional sidebar and takes up the full screen height (h-screen). Build a custom top header and a split view (products left, cart right).",
+    "For the Dashboard, assume it's wrapped in the existing DashboardLayout or create a custom standalone view with the required KPIs.",
+    "Include a prominent 'MOCKUP / Vista previa de diseño · No funcional' banner at the absolute top of both screens with a warning color.",
+    "Use standard Shadcn/UI primitive classes and standard Tailwind utility classes based on the existing index.css variables.",
+    "Include the data-testid attribute on all interactive elements as per the critical rules."
+  ]
+}
