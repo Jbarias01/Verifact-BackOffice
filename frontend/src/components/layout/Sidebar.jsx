@@ -17,6 +17,9 @@ import {
     Send,
     Store,
     ShoppingCart,
+    Tag,
+    Package,
+    Boxes,
     Users
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -34,6 +37,13 @@ const menuItems = [
         title: 'Ventas',
         items: [
             { name: 'POS', icon: ShoppingCart, path: '/pos', badge: 'Nuevo' },
+        ]
+    },
+    {
+        title: 'Inventario',
+        items: [
+            { name: 'Categorías', icon: Tag, path: '/dashboard/inventario/categorias' },
+            { name: 'Productos', icon: Package, path: '/dashboard/inventario/productos' },
         ]
     },
     {

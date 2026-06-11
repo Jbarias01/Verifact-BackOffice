@@ -25,6 +25,8 @@ import EcfRecibidosReport from '@/pages/EcfRecibidosReport';
 import Sucursales from '@/pages/Sucursales';
 import Clientes from '@/pages/Clientes';
 import Pos from '@/pages/Pos';
+import InventarioCategorias from '@/pages/InventarioCategorias';
+import InventarioProductos from '@/pages/InventarioProductos';
 
 // Layout
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -67,6 +69,8 @@ function App() {
                         {/* Protected Dashboard Routes */}
                         <Route path="/dashboard" element={<DashboardLayout />}>
                             <Route index element={<Dashboard />} />
+                            <Route path="inventario/categorias" element={<InventarioCategorias />} />
+                            <Route path="inventario/productos" element={<InventarioProductos />} />
                             <Route path="facturas" element={<Facturas />} />
                             <Route path="recepcion-ecf" element={<RecepcionEcf />} />
                             <Route path="clientes" element={<Clientes />} />
