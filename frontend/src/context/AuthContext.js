@@ -16,6 +16,15 @@ export const VERIFACT_ENVIRONMENTS = [
 
 const DEFAULT_ENVIRONMENT = DEFAULT_ENV;
 
+// On every page load, force the environment back to production.
+// Reason: users must always land on Producción by default. F8 still lets
+// them switch during the session, but a refresh resets to prod.
+try {
+    localStorage.setItem(ENV_STORAGE_KEY, DEFAULT_ENVIRONMENT);
+} catch (e) {
+    // ignore storage errors
+}
+
 // Global axios interceptor — sends the active env on every request
 axios.interceptors.request.use((config) => {
     try {
