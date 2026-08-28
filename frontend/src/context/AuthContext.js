@@ -338,16 +338,24 @@ export const AuthProvider = ({ children }) => {
 
             const data = response.data;
 
-            if (data.success) {
-                return { 
-                    success: true, 
-                    message: 'Registro exitoso. Por favor inicia sesión con tus credenciales.',
-                    requireLogin: true
+            // Success is either:
+            //  - proxy path (preview): backend wraps as { success: true, ... }
+            //  - direct path (production): .NET returns { tenantId, clienteRNC, usuarioId, usuarioEmail }
+            // Any HTTP 200/201 with tenantId (or explicit success:true) counts as success.
+            const httpOk = response.status >= 200 && response.status < 300;
+            const looksLikeSuccess = data && (data.success === true || !!data.tenantId || !!data.clienteId);
+
+            if (httpOk && looksLikeSuccess) {
+                return {
+                    success: true,
+                    message: 'Registro exitoso.',
+                    tenantId: data.tenantId || data.clienteId,
+                    usuarioEmail: data.usuarioEmail,
                 };
             } else {
-                return { 
-                    success: false, 
-                    error: data.message || 'Error en el registro' 
+                return {
+                    success: false,
+                    error: data?.message || data?.error || data?.detail || data?.title || 'Error en el registro',
                 };
             }
         } catch (error) {

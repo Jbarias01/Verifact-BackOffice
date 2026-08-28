@@ -1,0 +1,51 @@
+{
+  "summary": "Verified the AuthContext.register() fix (accepts success:true OR tenantId/clienteId on HTTP 2xx). Backend proxy test PASSES: /api/tenant/registrar returns {success:true, clienteId, clienteRNC, usuarioId, usuarioEmail} on new RNC in TEST env — the frontend fix correctly maps clienteId as tenantId fallback. Duplicate-RNC path also returns proper error handling. Frontend UI walkthrough of the 4-step wizard is BLOCKED — completely unrelated compile errors from plugins/visual-edits/babel-metadata-plugin.js prevent the React bundle from serving. The /register page (and every page) renders a blank body with only <head>. This is preview tooling breakage across multiple files, not an issue introduced by the AuthContext fix.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/tenant/registrar", "issue": "Response contains 'clienteId' (not 'tenantId'). Frontend fix handles both, but naming is inconsistent with the .NET direct-response shape that uses 'tenantId'. Consider aligning field names."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "webpack/babel toolchain", "issue": "Compile fails with 8 errors: 'TypeError: Cannot read properties of null (reading traverse)' from /app/frontend/plugins/visual-edits/babel-metadata-plugin.js at ImportDeclaration (line 865) → lazyEvaluatePropSource (line 845) → lookupCrossFilePropSource. Affects at least ClientesEmpresas.jsx and multiple pages/mockups/*.jsx (PosSalesMockup.jsx and others). No JS bundle is served; every route renders an empty body. This blocks all UI testing.", "selector": "n/a", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "code_review_of_fix": {
+    "file": "/app/frontend/src/context/AuthContext.js",
+    "verdict": "CORRECT",
+    "notes": [
+      "Line 345-348: httpOk = response.status in [200..300), looksLikeSuccess = data.success===true OR !!data.tenantId OR !!data.clienteId. This correctly covers: (a) preview proxy path which wraps response with success:true+clienteId, (b) production direct-to-.NET path which returns raw {tenantId, clienteRNC, usuarioId, usuarioEmail} without success flag on HTTP 200.",
+      "Return value includes tenantId: data.tenantId || data.clienteId — proper fallback for the naming mismatch.",
+      "Failure branch preserved: throws through the else and 400/500 handling untouched, so real errors still show 'Error en el registro'.",
+      "login() function is untouched — regression-safe."
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_tenant_register.py",
+    "/app/test_reports/pytest/tenant_register.xml"
+  ],
+  "action_items": [
+    "CRITICAL for main agent: Fix compile errors in /app/frontend/plugins/visual-edits/babel-metadata-plugin.js (line 865 crash inside ImportDeclaration handler → 'Cannot read properties of null (reading traverse)'). The plugin is failing on multiple JSX files (ClientesEmpresas.jsx, pages/mockups/PosSalesMockup.jsx, and others). Until this is fixed, the entire preview app renders a blank page and no UI regression can be verified. This is unrelated to the AuthContext.js register() fix but must be resolved before /register can be exercised by user or by testing agents.",
+    "Re-run frontend playwright wizard test once the compile errors are cleared to confirm the bug fix end-to-end.",
+    "Minor: consider making the proxy response field name 'tenantId' (currently 'clienteId') to match the direct .NET response shape and remove the need for the fallback in the frontend."
+  ],
+  "critical_code_review_comments": [
+    "AuthContext.register() fix is well-scoped and defensive; it also captures data.message / data.error / data.detail / data.title on failure — good.",
+    "The unrelated build breakage is severe: 8 compilation errors mean the customer cannot even reach the register screen in the preview environment. Main agent MUST fix the visual-edits plugin regression (or exclude the offending files/routes) before anything else."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_tenant_register.py (new)",
+    "/app/test_reports/pytest/tenant_register.xml (generated)",
+    "/app/test_reports/iteration_3.json"
+  ],
+  "success_rate": {"backend": "100% (2/2)", "frontend": "0% (blocked by webpack compile errors, could not execute)"},
+  "test_credentials": {"env": "test", "note": "For register, uses random 9-digit RNC and random email. For duplicate-RNC regression, uses the same RNC twice within the test."},
+  "seed_data_creation": "The backend test test_registrar_success_with_new_rnc created one TEST_Empresa_<n> tenant in the TEST env. test_registrar_duplicate_rnc_fails created one additional TEST_Empresa_<n>. No cleanup performed (backend has no delete endpoint reachable to the test).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend fix verification is complete and green. The frontend cannot be exercised because plugins/visual-edits/babel-metadata-plugin.js is crashing across multiple pages, producing an empty document body on every route. Once main agent unblocks the compile errors, re-run the 4-step /register wizard flow (random 9-digit RNC → user data → Professional auto-selected → accept terms → submit) and assert (a) no 'Error en el registro' under 'Confirma tu registro' and (b) navigation to /dashboard or /login. Also re-test regression by attempting the same RNC twice to confirm the real error branch still surfaces.",
+  "rca_of_the_issue": "Original bug: production HTTP path calls .NET directly (bypassing the FastAPI proxy) and .NET responds 200 with {tenantId, clienteRNC, usuarioId, usuarioEmail} but WITHOUT a 'success' field. The old register() required data.success===true, so every real registration was displayed as 'Error en el registro' though the tenant was actually created. FIX (AuthContext.js ~L339-348): treat any HTTP 2xx that contains a success:true OR tenantId OR clienteId as success. Verified via backend proxy test: response has success:true + clienteId in preview, and the OR-branch covers both flavors."
+}

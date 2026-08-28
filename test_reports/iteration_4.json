@@ -1,0 +1,33 @@
+{
+  "summary": "Frontend E2E re-test of /register 4-step wizard after visual-edits/babel-metadata-plugin.js line 865 null-guard fix. Both flows PASS. The plugin no longer crashes and /register renders normally. Success flow: created new tenant with random RNC 113937346, wizard completed all 4 steps, submit produced HTTP 2xx with clienteId, AuthContext.register() recognized success (via clienteId fallback), auto-login succeeded and app navigated to /dashboard as 'QA Tester' admin. No 'register-error' surfaced. Regression flow: duplicate RNC 132062884 (AXCOM SRL) reached step 4, submit surfaced 'register-error' with real backend message 'Ya existe un cliente con ese RNC' under the 'Confirma tu registro' heading, and the user remained on /register (no redirect).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "e2e_flows_verified": [
+    {"flow": "Register success (new random RNC in TEST env)", "result": "PASS", "final_url": "/dashboard", "notes": "Auto-login after register worked. QA Tester admin dashboard rendered with company 'Test Empresa QA' RNC 113937346."},
+    {"flow": "Register regression — duplicate RNC 132062884", "result": "PASS", "final_url": "/register", "error_shown": "Ya existe un cliente con ese RNC", "notes": "register-error visible under 'Confirma tu registro', stayed on /register, no redirect. Backend error message surfaced through data.message per AuthContext.register() failure branch."}
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_tenant_register.py",
+    "/app/test_reports/pytest/tenant_register.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "babel-metadata-plugin.js L865 null-guard (searchScope + typeof searchScope.traverse === 'function') is defensive and correct — prevents the previous 'Cannot read properties of null (reading traverse)' crash without changing plugin behavior.",
+    "AuthContext.register() properly handles both response shapes (success:true wrapper AND raw tenantId/clienteId). Verified end-to-end in preview env.",
+    "Minor (already flagged in iteration_3): proxy returns 'clienteId' while direct .NET returns 'tenantId'. Frontend fallback covers both — consider unifying server-side."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_4.json"
+  ],
+  "success_rate": {"backend": "100% (previously verified 2/2)", "frontend": "100% (2/2 E2E flows)"},
+  "test_credentials": {"env": "test", "new_user_created_this_run": {"rnc": "113937346", "company": "Test Empresa QA", "user_email": "qa-user-dg1tic@test.com", "password": "A123@qwerty"}, "duplicate_rnc_used": "132062884"},
+  "seed_data_creation": "Created 1 new tenant in TEST env (RNC 113937346, company 'Test Empresa QA', user qa-user-dg1tic@test.com / password A123@qwerty). Duplicate-RNC attempt did NOT create a new tenant (backend rejected). No cleanup performed — no delete endpoint reachable.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Both the register bug (auto-recognize success via clienteId/tenantId) AND the visual-edits plugin crash (null parentPath) are now resolved and verified end-to-end. /register renders, all 4 steps advance, submit succeeds on new RNC and shows real backend error on duplicate. No further re-test required for this bug pair.",
+  "rca_of_the_issue": "Two independent bugs converged: (1) AuthContext.register() only accepted data.success===true, but production/.NET returns raw {tenantId,...} on HTTP 200 without a success flag — fixed by treating HTTP 2xx + presence of tenantId/clienteId as success; (2) visual-edits babel plugin crashed on ImportDeclaration when importPath.parentPath was null, blocking bundle compilation — fixed by null-guarding searchScope at L865-866. With both fixes verified live, users can now register successfully AND see real duplicate-RNC error messages."
+}
